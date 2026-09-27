@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>İkimizin Sayfası</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FBF1EA; --bg-soft: #F5E1D6; --card: #FFFFFF;
+    --text: #3A2432; --text-soft: #8C6E78; --accent: #C4823A;
+    --accent-soft: #E4C9A3; --border: #EBD9CB;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #241621; --bg-soft: #2E1B29; --card: #32202D;
+      --text: #F5E9E7; --text-soft: #C4A2AE; --accent: #E3B368;
+      --accent-soft: #6B4A44; --border: #4A3140;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #241621; --bg-soft: #2E1B29; --card: #32202D;
+    --text: #F5E9E7; --text-soft: #C4A2AE; --accent: #E3B368;
+    --accent-soft: #6B4A44; --border: #4A3140;
+  }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    height: 100%; margin: 0; overflow-x: hidden;
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+    color: var(--text); font-family: 'Karla', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 20px 64px; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .top span { font-size: 0.85rem; color: var(--text-soft); }
+  .gear { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 8px; border-radius: 8px; display: flex; }
+  .gear:hover, .gear:focus-visible { color: var(--accent); outline: none; }
+  .gear:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+  .names { font-family: 'Fraunces', serif; font-weight: 500; font-size: clamp(1.6rem, 6vw, 2.3rem); text-align: center; margin: 18px 0 6px; animation: rise 0.6s ease-out; }
+  .hero { text-align: center; padding: 18px 0 30px; }
+  .hero .count { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(4rem, 22vw, 6.5rem); line-height: 1; color: var(--accent); animation: rise 0.7s ease-out; }
+  .hero .label { color: var(--text-soft); margin-top: 6px; font-size: 1rem; }
+  .hero .sub { margin-top: 18px; font-variant-numeric: tabular-nums; font-size: 1rem; color: var(--text-soft); letter-spacing: 0.02em; }
+  .hero .breakdown { margin-top: 4px; font-size: 0.88rem; color: var(--text-soft); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0 28px; }
+  h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.3rem; margin: 0 0 14px; }
+  .sync-note { text-align: center; font-size: 0.78rem; color: var(--text-soft); margin: -4px 0 18px; }
+  .add-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: var(--card); border: none; padding: 10px 16px; border-radius: 8px; font-family: 'Karla', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; margin-bottom: 18px; }
+  .add-btn:hover { opacity: 0.92; }
+  .add-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .entry-form { display: none; margin-bottom: 22px; }
+  .entry-form.open { display: block; }
+  .entry-form textarea { width: 100%; min-height: 90px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: 'Karla', sans-serif; font-size: 0.95rem; resize: vertical; }
+  .entry-form textarea:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .entry-form .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .entry-form input[type="date"], .entry-form select { padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: 'Karla', sans-serif; }
+  .entry-form .save { background: var(--accent); color: var(--card); border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+  .entry-form .cancel { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 9px 6px; }
+  .entries { list-style: none; padding: 0; margin: 0; }
+  .entry { border-left: 2px solid var(--accent-soft); padding: 4px 0 4px 16px; margin-bottom: 22px; }
+  .entry .date { font-size: 0.8rem; color: var(--text-soft); margin-bottom: 4px; }
+  .entry p { margin: 0; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .entry .del { background: none; border: none; color: var(--text-soft); font-size: 0.78rem; cursor: pointer; padding: 4px 0; margin-top: 4px; }
+  .entry .del:hover { color: var(--accent); }
+  .empty { color: var(--text-soft); font-size: 0.92rem; }
+  .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .modal-back.open { display: flex; }
+  .modal { background: var(--card); border-radius: 12px; padding: 22px; width: 100%; max-width: 360px; }
+  .modal h3 { font-family: 'Fraunces', serif; font-weight: 500; margin: 0 0 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 5px; }
+  .field input { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: 'Karla', sans-serif; font-size: 0.95rem; }
+  .modal .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  .modal .save { background: var(--accent); color: var(--card); border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+  .modal .cancel { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 9px 6px; }
+  .setup-warning { max-width: 440px; margin: 60px auto; padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; text-align: center; font-family: 'Karla', sans-serif; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="top">
+    <span>İkimizin sayfası</span>
+    <button class="gear" id="settingsBtn" aria-label="Ayarları düzenle" title="Ayarları düzenle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+  <div class="names" id="namesDisplay">Ben &amp; Sen</div>
+  <div class="hero">
+    <div class="count" id="totalDays">0</div>
+    <div class="label" id="daysLabel">gün oldu</div>
+    <div class="breakdown" id="breakdown"></div>
+    <div class="sub" id="liveClock"></div>
+  </div>
+  <hr class="divider">
+  <h2>Günlüğümüz</h2>
+  <p class="sync-note">Bu sayfa paylaşılan ortak veriye bağlı — ikiniz de aynı notları görürsünüz.</p>
+  <button class="add-btn" id="openForm">+ Bugünü yaz</button>
+  <div class="entry-form" id="entryForm">
+    <textarea id="entryText" placeholder="Bugün ne oldu, ne hissettin..."></textarea>
+    <div class="row">
+      <select id="entryAuthor" aria-label="Kim yazıyor"></select>
+      <input type="date" id="entryDate">
+      <button class="save" id="saveEntry">Kaydet</button>
+      <button class="cancel" id="cancelEntry">Vazgeç</button>
+    </div>
+  </div>
+  <ul class="entries" id="entriesList"></ul>
+  <p class="empty" id="emptyMsg" style="display:none;">Henüz bir not yok. İlk anını ekle.</p>
+</div>
+
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <h3>Ayarlar</h3>
+    <div class="field"><label for="name1">1. isim</label><input id="name1" type="text" maxlength="20"></div>
+    <div class="field"><label for="name2">2. isim</label><input id="name2" type="text" maxlength="20"></div>
+    <div class="field"><label for="startDate">Başlangıç tarihi</label><input id="startDate" type="date"></div>
+    <div class="row">
+      <button class="cancel" id="closeModal">Vazgeç</button>
+      <button class="save" id="saveSettings">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // ============================================================
+  // 1) Firebase konsolundan aldığın bilgileri AŞAĞIYA yapıştır.
+  //    (Adım adım nasıl alacağını sohbetteki adımlarda anlattım.)
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyCcOuvmdAuevdLi2gih9H5wBazW853pNms",
+    authDomain: "ourdiary-5cb41.firebaseapp.com",
+    projectId: "ourdiary-5cb41",
+    storageBucket: "ourdiary-5cb41.firebasestorage.app",
+    messagingSenderId: "391022079375",
+    appId: "1:391022079375:web:a24911805349e9f1c42ffa"
+  };
+  // ============================================================
+
+  if (firebaseConfig.apiKey === "AIzaSyCcOuvmdAuevdLi2gih9H5wBazW853pNms") {
+    document.getElementById('app').innerHTML =
+      '<div class="setup-warning">Bu sayfa henüz kurulmadı.<br>Kodun en üstündeki <code>firebaseConfig</code> kısmına kendi Firebase projenin bilgilerini yapıştırman gerekiyor.</div>';
+  } else {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+    const {
+      getFirestore, doc, setDoc, onSnapshot,
+      collection, addDoc, deleteDoc, query, orderBy, serverTimestamp
+    } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const settingsRef = doc(db, "site", "settings");
+    const entriesCol = collection(db, "entries");
+
+    let settings = { name1: 'Ben', name2: 'Sen', start: new Date().toISOString().slice(0,10) };
+    let diary = [];
+
+    function renderNames() {
+      document.getElementById('namesDisplay').textContent = settings.name1 + ' & ' + settings.name2;
+    }
+
+    function elapsed(start, now) {
+      let y = now.getFullYear() - start.getFullYear();
+      let mo = now.getMonth() - start.getMonth();
+      let d = now.getDate() - start.getDate();
+      let h = now.getHours() - start.getHours();
+      let mi = now.getMinutes() - start.getMinutes();
+      let s = now.getSeconds() - start.getSeconds();
+      if (s < 0) { s += 60; mi--; }
+      if (mi < 0) { mi += 60; h--; }
+      if (h < 0) { h += 24; d--; }
+      if (d < 0) { d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); mo--; }
+      if (mo < 0) { mo += 12; y--; }
+      const totalDays = Math.max(0, Math.floor((now - start) / 86400000));
+      return { y, mo, d, h, mi, s, totalDays };
+    }
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+      const start = new Date(settings.start + 'T00:00:00');
+      const now = new Date();
+      const e = elapsed(start, now);
+      document.getElementById('totalDays').textContent = e.totalDays;
+      document.getElementById('breakdown').textContent = e.y + ' yıl, ' + e.mo + ' ay, ' + e.d + ' gün';
+      document.getElementById('liveClock').textContent = pad(e.h) + ' sa ' + pad(e.mi) + ' dk ' + pad(e.s) + ' sn';
+    }
+
+    function renderDiary() {
+      const list = document.getElementById('entriesList');
+      const empty = document.getElementById('emptyMsg');
+      list.innerHTML = '';
+      empty.style.display = diary.length ? 'none' : 'block';
+      for (const entry of diary) {
+        const li = document.createElement('li');
+        li.className = 'entry';
+        const dateEl = document.createElement('div');
+        dateEl.className = 'date';
+        const d = new Date(entry.date + 'T00:00:00');
+        const dateStr = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+        dateEl.textContent = entry.author ? dateStr + ' · ' + entry.author : dateStr;
+        const p = document.createElement('p');
+        p.textContent = entry.text;
+        const del = document.createElement('button');
+        del.className = 'del'; del.textContent = 'Sil';
+        del.onclick = () => deleteDoc(doc(db, 'entries', entry.id));
+        li.append(dateEl, p, del);
+        list.appendChild(li);
+      }
+    }
+
+    onSnapshot(settingsRef, (snap) => {
+      if (snap.exists()) { settings = snap.data(); renderNames(); tick(); }
+    }, (err) => console.error('settings sync error', err));
+
+    const entriesQuery = query(entriesCol, orderBy('date', 'desc'));
+    onSnapshot(entriesQuery, (snap) => {
+      diary = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderDiary();
+    }, (err) => console.error('diary sync error', err));
+
+    const modalBack = document.getElementById('modalBack');
+    document.getElementById('settingsBtn').onclick = () => {
+      document.getElementById('name1').value = settings.name1;
+      document.getElementById('name2').value = settings.name2;
+      document.getElementById('startDate').value = settings.start;
+      modalBack.classList.add('open');
+    };
+    document.getElementById('closeModal').onclick = () => modalBack.classList.remove('open');
+    document.getElementById('saveSettings').onclick = async () => {
+      const newSettings = {
+        name1: document.getElementById('name1').value.trim() || 'Ben',
+        name2: document.getElementById('name2').value.trim() || 'Sen',
+        start: document.getElementById('startDate').value || settings.start
+      };
+      await setDoc(settingsRef, newSettings);
+      modalBack.classList.remove('open');
+    };
+
+    const entryForm = document.getElementById('entryForm');
+    document.getElementById('openForm').onclick = () => {
+      document.getElementById('entryDate').value = new Date().toISOString().slice(0,10);
+      const sel = document.getElementById('entryAuthor');
+      sel.innerHTML = '';
+      [settings.name1, settings.name2].forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        sel.appendChild(opt);
+      });
+      entryForm.classList.add('open');
+      document.getElementById('entryText').focus();
+    };
+    document.getElementById('cancelEntry').onclick = () => {
+      entryForm.classList.remove('open'); document.getElementById('entryText').value = '';
+    };
+    document.getElementById('saveEntry').onclick = async () => {
+      const text = document.getElementById('entryText').value.trim();
+      const date = document.getElementById('entryDate').value || new Date().toISOString().slice(0,10);
+      const author = document.getElementById('entryAuthor').value || settings.name1;
+      if (!text) return;
+      await addDoc(entriesCol, { date, text, author, createdAt: serverTimestamp() });
+      document.getElementById('entryText').value = '';
+      entryForm.classList.remove('open');
+    };
+
+    renderNames();
+    renderDiary();
+    tick();
+    setInterval(tick, 1000);
+  }
+</script>
+</body>
+</html>
