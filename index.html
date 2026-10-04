@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* ====== BÖLÜM: RENK VE TEMA DEĞİŞKENLERİ ====== */
   :root {
     --bg: #FBF1EA; --bg-soft: #F5E1D6; --card: #FFFFFF;
     --text: #3A2432; --text-soft: #8C6E78; --accent: #C4823A;
@@ -37,16 +36,13 @@
     color: var(--text); font-family: 'Karla', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 20px 64px; }
+  .wrap { max-width: 580px; margin: 0 auto; padding: 28px 20px 64px; }
   
-  /* ====== BÖLÜM: ÜST BAR ====== */
   .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .top span { font-size: 0.85rem; color: var(--text-soft); font-weight: 500; letter-spacing: 0.03em; }
   .gear { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 8px; border-radius: 8px; display: flex; transition: all 0.2s ease; }
   .gear:hover, .gear:focus-visible { color: var(--accent); outline: none; background: rgba(196, 130, 58, 0.1); }
-  .gear:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 
-  /* ====== BÖLÜM: FOTOĞRAF ALANI (AVATARLAR) ====== */
   .avatars-wrapper {
     display: flex;
     justify-content: center;
@@ -67,92 +63,78 @@
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
     cursor: pointer;
   }
-  .avatar-frame:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 12px 28px rgba(196, 130, 58, 0.25);
-    z-index: 4;
-  }
-  .avatar-frame.left {
-    z-index: 1;
-  }
-  .avatar-frame.right {
-    margin-left: -22px;
-    z-index: 2;
-  }
-  .avatar-frame img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+  .avatar-frame:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 12px 28px rgba(196, 130, 58, 0.25); z-index: 4; }
+  .avatar-frame.left { z-index: 1; }
+  .avatar-frame.right { margin-left: -22px; z-index: 2; }
+  .avatar-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .heart-badge {
-    position: absolute;
-    z-index: 5;
-    background: var(--card);
-    border: 2px solid var(--border);
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    color: #e25555;
-    animation: heartPulse 2s infinite ease-in-out;
+    position: absolute; z-index: 5; background: var(--card); border: 2px solid var(--border);
+    border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); color: #e25555; animation: heartPulse 2s infinite ease-in-out;
   }
-  @keyframes heartPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.18); }
-  }
+  @keyframes heartPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
 
-  /* ====== BÖLÜM: SAYAÇ (HERO) ====== */
   .names { font-family: 'Fraunces', serif; font-weight: 500; font-size: clamp(1.6rem, 6vw, 2.3rem); text-align: center; margin: 12px 0 6px; animation: rise 0.6s ease-out; }
-  .hero { text-align: center; padding: 12px 0 28px; }
+  .hero { text-align: center; padding: 12px 0 20px; }
   .hero .count { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(4rem, 22vw, 6.5rem); line-height: 1; color: var(--accent); animation: rise 0.7s ease-out; }
   .hero .label { color: var(--text-soft); margin-top: 6px; font-size: 1rem; }
-  .hero .sub { margin-top: 18px; font-variant-numeric: tabular-nums; font-size: 1rem; color: var(--text-soft); letter-spacing: 0.02em; }
+  .hero .sub { margin-top: 14px; font-variant-numeric: tabular-nums; font-size: 1rem; color: var(--text-soft); letter-spacing: 0.02em; }
   .hero .breakdown { margin-top: 4px; font-size: 0.88rem; color: var(--text-soft); }
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0 28px; }
-  h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.3rem; margin: 0 0 14px; }
+
+  .milestone-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.02); }
+  .milestone-title { font-size: 0.88rem; font-weight: 700; color: var(--text-soft); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
+  .milestone-progress { background: var(--bg-soft); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 8px; }
+  .milestone-bar { background: var(--accent); height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+  .milestone-details { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; color: var(--text); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0 24px; }
+  h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.3rem; margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; }
   
-  /* ====== BÖLÜM: GÜNLÜK EKLEME FORMU ====== */
-  .sync-note { text-align: center; font-size: 0.78rem; color: var(--text-soft); margin: -4px 0 18px; }
-  .add-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: var(--card); border: none; padding: 10px 16px; border-radius: 8px; font-family: 'Karla', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; margin-bottom: 18px; transition: opacity 0.2s; }
+  .btn-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .add-btn { flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: var(--card); border: none; padding: 11px 16px; border-radius: 10px; font-family: 'Karla', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; transition: opacity 0.2s; }
   .add-btn:hover { opacity: 0.92; }
-  .add-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .entry-form { display: none; margin-bottom: 22px; }
+  .surprise-btn { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); }
+  .surprise-btn:hover { background: var(--card); }
+
+  .entry-form { display: none; margin-bottom: 22px; background: var(--card); border: 1px solid var(--border); padding: 14px; border-radius: 12px; }
   .entry-form.open { display: block; }
-  .entry-form textarea { width: 100%; min-height: 90px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: 'Karla', sans-serif; font-size: 0.95rem; resize: vertical; }
-  .entry-form textarea:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .entry-form textarea { width: 100%; min-height: 90px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: 'Karla', sans-serif; font-size: 0.95rem; resize: vertical; }
   .entry-form .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-  .entry-form input[type="date"], .entry-form select { padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: 'Karla', sans-serif; }
+  .entry-form input[type="date"], .entry-form select { padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: 'Karla', sans-serif; }
   .entry-form .save { background: var(--accent); color: var(--card); border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
   .entry-form .cancel { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 9px 6px; }
-  
-  /* ====== BÖLÜM: GÜNLÜK NOT LİSTESİ ====== */
+
   .day { margin-bottom: 6px; }
   .day summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
   .day summary::-webkit-details-marker { display: none; }
-  .day summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .day summary::after { content: ''; width: 8px; height: 8px; border-right: 2px solid var(--text-soft); border-bottom: 2px solid var(--text-soft); transform: rotate(45deg); transition: transform 0.2s; flex-shrink: 0; margin-left: 4px; }
   .day details[open] summary::after { transform: rotate(-135deg); }
   .day-title { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.05rem; color: var(--accent); flex: 1; }
   .day-count { font-size: 0.8rem; color: var(--text-soft); }
   .day-entries { padding-top: 16px; }
   .entries { list-style: none; padding: 0; margin: 0; }
-  .entry { border-left: 2px solid var(--accent-soft); padding: 4px 0 4px 16px; margin-bottom: 22px; }
+  .entry { border-left: 2px solid var(--accent-soft); padding: 4px 0 4px 16px; margin-bottom: 22px; position: relative; }
   .entry .date { font-size: 0.8rem; color: var(--text-soft); margin-bottom: 4px; font-weight: 700; }
   .entry p { margin: 0; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
   .entry .del { background: none; border: none; color: var(--text-soft); font-size: 0.78rem; cursor: pointer; padding: 4px 0; margin-top: 4px; transition: color 0.2s; }
   .entry .del:hover { color: #e25555; }
   .empty { color: var(--text-soft); font-size: 0.92rem; }
 
-  /* ====== BÖLÜM: AYARLAR VE SİLME MODALLARI ====== */
+  .bucket-section { margin-top: 36px; }
+  .bucket-add-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .bucket-add-row input { flex: 1; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: 'Karla', sans-serif; }
+  .bucket-add-row button { background: var(--accent); color: var(--card); border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+  .bucket-list { list-style: none; padding: 0; margin: 0; }
+  .bucket-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+  .bucket-item.done span { text-decoration: line-through; opacity: 0.6; }
+  .bucket-item-content { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .bucket-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+  .bucket-del { background: none; border: none; color: var(--text-soft); cursor: pointer; font-size: 0.8rem; }
+
   .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 20px; z-index: 100; backdrop-filter: blur(3px); }
   .modal-back.open { display: flex; }
-  .modal { background: var(--card); border-radius: 14px; padding: 22px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+  .modal { background: var(--card); border-radius: 14px; padding: 22px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
   .modal h3 { font-family: 'Fraunces', serif; font-weight: 500; margin: 0 0 16px; font-size: 1.25rem; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 5px; font-weight: 500; }
@@ -160,7 +142,6 @@
   .photo-input-group { display: flex; gap: 8px; align-items: center; }
   .photo-input-group input[type="text"] { flex: 1; }
   .btn-upload { background: var(--accent-soft); color: var(--text); border: none; padding: 9px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-  .btn-upload:hover { opacity: 0.88; }
   .modal .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
   .modal .save { background: var(--accent); color: var(--card); border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; }
   .modal .cancel { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 9px 8px; }
@@ -169,16 +150,15 @@
 </head>
 <body>
 <div class="wrap" id="app">
-  <!-- ====== BÖLÜM: ÜST BAR ====== -->
   <div class="top">
-    <span>İkimizin sayfası</span>
+    <span>İkimizin Sayfası</span>
     <button class="gear" id="settingsBtn" aria-label="Ayarları düzenle" title="Ayarları düzenle">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </div>
 
-  <!-- ====== BÖLÜM: FOTOĞRAFLAR (YENİ EKLENEN KISIM) ====== -->
-  <div class="avatars-wrapper" id="avatarsWrapper" title="Fotoğrafları Ayarlar'dan değiştirebilirsiniz">
+  <!-- Fotoğraf Alanı -->
+  <div class="avatars-wrapper" id="avatarsWrapper" title="Fotoğrafları değiştirmek için tıklayın">
     <div class="avatar-frame left">
       <img id="photo1Img" src="" alt="Partner 1" />
     </div>
@@ -190,7 +170,6 @@
     </div>
   </div>
 
-  <!-- ====== BÖLÜM: SAYAÇ ====== -->
   <div class="names" id="namesDisplay">Ben &amp; Sen</div>
   <div class="hero">
     <div class="count" id="totalDays">0</div>
@@ -198,12 +177,30 @@
     <div class="breakdown" id="breakdown"></div>
     <div class="sub" id="liveClock"></div>
   </div>
+
+  <!-- DÖNÜM NOKTALARI WIDGET (AYLIK HEDEF) -->
+  <div class="milestone-box">
+    <div class="milestone-title" id="milestoneTitle">Sonraki Hedef: 1. Ay 🎉</div>
+    <div class="milestone-progress">
+      <div class="milestone-bar" id="milestoneBar" style="width: 0%;"></div>
+    </div>
+    <div class="milestone-details">
+      <span id="milestoneStart">0. Ay Tamamlandı</span>
+      <span id="milestoneEnd">%0 Tamamlandı</span>
+    </div>
+  </div>
+
   <hr class="divider">
   
-  <!-- ====== BÖLÜM: GÜNLÜK ====== -->
-  <h2>Günlüğümüz</h2>
-  <p class="sync-note">Bu sayfa paylaşılan ortak veriye bağlı — ikiniz de aynı notları görürsünüz.</p>
-  <button class="add-btn" id="openForm">+ Bugünü yaz</button>
+  <h2>
+    <span>Günlüğümüz</span>
+  </h2>
+  
+  <div class="btn-row">
+    <button class="add-btn" id="openForm">+ Bugünü Yaz</button>
+    <button class="add-btn surprise-btn" id="randomMemoryBtn">✨ Rastgele Anı</button>
+  </div>
+
   <div class="entry-form" id="entryForm">
     <textarea id="entryText" placeholder="Bugün ne oldu, ne hissettin..."></textarea>
     <div class="row">
@@ -213,11 +210,23 @@
       <button class="cancel" id="cancelEntry">Vazgeç</button>
     </div>
   </div>
+
   <ul class="entries" id="entriesList"></ul>
   <p class="empty" id="emptyMsg" style="display:none;">Henüz bir not yok. İlk anını ekle.</p>
+
+  <!-- BİRLİKTE YAPILACAKLAR LİSTESİ (BUCKET LIST) -->
+  <div class="bucket-section">
+    <hr class="divider">
+    <h2>Birlikte Yapılacaklar 🎈</h2>
+    <div class="bucket-add-row">
+      <input type="text" id="bucketInput" placeholder="Birlikte yapılacak bir hayal ekle...">
+      <button id="addBucketBtn">Ekle</button>
+    </div>
+    <ul class="bucket-list" id="bucketList"></ul>
+  </div>
 </div>
 
-<!-- ====== BÖLÜM: AYARLAR PENCERESİ ====== -->
+<!-- AYARLAR MODALI -->
 <div class="modal-back" id="modalBack">
   <div class="modal">
     <h3>Ayarlar</h3>
@@ -226,9 +235,9 @@
       <input id="name1" type="text" maxlength="20">
     </div>
     <div class="field">
-      <label for="photo1">1. Fotoğraf (URL veya Dosya Yükle)</label>
+      <label for="photo1">1. Fotoğraf (URL veya Yükle)</label>
       <div class="photo-input-group">
-        <input id="photo1" type="text" placeholder="https://... veya resim seçin">
+        <input id="photo1" type="text" placeholder="https://... veya resim seç">
         <button type="button" class="btn-upload" onclick="document.getElementById('file1').click()">Seç</button>
         <input type="file" id="file1" accept="image/*" style="display:none">
       </div>
@@ -238,9 +247,9 @@
       <input id="name2" type="text" maxlength="20">
     </div>
     <div class="field">
-      <label for="photo2">2. Fotoğraf (URL veya Dosya Yükle)</label>
+      <label for="photo2">2. Fotoğraf (URL veya Yükle)</label>
       <div class="photo-input-group">
-        <input id="photo2" type="text" placeholder="https://... veya resim seçin">
+        <input id="photo2" type="text" placeholder="https://... veya resim seç">
         <button type="button" class="btn-upload" onclick="document.getElementById('file2').click()">Seç</button>
         <input type="file" id="file2" accept="image/*" style="display:none">
       </div>
@@ -256,11 +265,22 @@
   </div>
 </div>
 
-<!-- ====== BÖLÜM: SİLME ONAY MODALI ====== -->
+<!-- RASTGELE ANI MODALI -->
+<div class="modal-back" id="memoryModalBack">
+  <div class="modal" style="text-align: center;">
+    <h3 style="color:var(--accent);">✨ Güzel Bir Anı Hatırlayalım ✨</h3>
+    <div id="randomMemoryContent" style="margin: 20px 0; font-size: 1.05rem; line-height: 1.6; text-align: left; background: var(--bg); padding: 14px; border-radius: 10px;"></div>
+    <div class="row" style="justify-content: center;">
+      <button class="save" id="closeMemoryModal">Çok Tatlı 💖</button>
+    </div>
+  </div>
+</div>
+
+<!-- SİLME MODALI -->
 <div class="modal-back" id="deleteModalBack">
   <div class="modal" style="max-width:320px; text-align:center;">
-    <h3 style="margin-bottom:8px;">Notu Sil?</h3>
-    <p style="color:var(--text-soft); font-size:0.9rem; margin-bottom:18px;">Bu anıyı silmek istediğinize emin misiniz?</p>
+    <h3 style="margin-bottom:8px;">Sil?</h3>
+    <p style="color:var(--text-soft); font-size:0.9rem; margin-bottom:18px;">Bu kaydı silmek istediğinize emin misiniz?</p>
     <div class="row" style="justify-content:center;">
       <button class="cancel" id="cancelDeleteBtn">Vazgeç</button>
       <button class="save" id="confirmDeleteBtn" style="background:#e25555;">Sil</button>
@@ -269,7 +289,6 @@
 </div>
 
 <script type="module">
-  // ====== BÖLÜM: FIREBASE BAĞLANTI AYARLARI ======
   const firebaseConfig = {
     apiKey: "AIzaSyCpkEjaHtcuNKCbMa-dVh20_LzFI8k7BeE",
     authDomain: "ourdiary-42e51.firebaseapp.com",
@@ -281,20 +300,20 @@
 
   if (firebaseConfig.apiKey === "BURAYA_YAPISTIR") {
     document.getElementById('app').innerHTML =
-      '<div class="setup-warning">Bu sayfa henüz kurulmadı.<br>Kodun en üstündeki <code>firebaseConfig</code> kısmına kendi Firebase projenin bilgilerini yapıştırman gerekiyor.</div>';
+      '<div class="setup-warning">Bu sayfa henüz kurulmadı.<br>Firebase bilgilerinizi ekleyin.</div>';
   } else {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
     const {
-      getFirestore, doc, setDoc, onSnapshot,
-      collection, addDoc, deleteDoc, query, orderBy, serverTimestamp
+      getFirestore, doc, setDoc, onSnapshot, updateDoc,
+      collection, addDoc, deleteDoc, serverTimestamp
     } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const settingsRef = doc(db, "site", "settings");
     const entriesCol = collection(db, "entries");
+    const bucketCol = collection(db, "bucket");
 
-    // Varsayılan Avatar SVG Görselleri (Görsel seçilmediğinde görünür)
     const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
     const defaultAvatar2 = "https://placehold.co/200x200/c4823a/ffffff?text=2";
 
@@ -306,23 +325,21 @@
       photo2: ''
     };
     let diary = [];
+    let bucketList = [];
+    let pendingDeleteType = null; // 'entry' veya 'bucket'
     let pendingDeleteId = null;
 
-    // ====== BÖLÜM: İSİMLERİ VE FOTOĞRAFLARI GÜNCELLEME ======
     function renderProfile() {
       document.getElementById('namesDisplay').textContent = settings.name1 + ' & ' + settings.name2;
       
       const img1 = document.getElementById('photo1Img');
       const img2 = document.getElementById('photo2Img');
-      
       img1.src = settings.photo1 || defaultAvatar1;
       img1.onerror = () => { img1.src = defaultAvatar1; };
-
       img2.src = settings.photo2 || defaultAvatar2;
       img2.onerror = () => { img2.src = defaultAvatar2; };
     }
 
-    // ====== BÖLÜM: SAYAÇ HESAPLAMA ======
     function elapsed(start, now) {
       let y = now.getFullYear() - start.getFullYear();
       let mo = now.getMonth() - start.getMonth();
@@ -338,39 +355,72 @@
       const totalDays = Math.max(0, Math.floor((now - start) / 86400000));
       return { y, mo, d, h, mi, s, totalDays };
     }
+
+    // AYLIK HEDEF HESAPLAMA (Her Ay İçin)
+    function updateMilestones(start, now) {
+      let y = now.getFullYear() - start.getFullYear();
+      let mo = now.getMonth() - start.getMonth();
+      let totalMonthsPassed = y * 12 + mo;
+      
+      if (now.getDate() < start.getDate()) {
+        totalMonthsPassed--;
+      }
+      if (totalMonthsPassed < 0) totalMonthsPassed = 0;
+
+      const nextMonthNum = totalMonthsPassed + 1;
+
+      // Geçmiş ay dönümü ve sonraki ay dönümü tarihlerini hesapla
+      const prevTargetDate = new Date(start);
+      prevTargetDate.setMonth(start.getMonth() + totalMonthsPassed);
+
+      const nextTargetDate = new Date(start);
+      nextTargetDate.setMonth(start.getMonth() + nextMonthNum);
+
+      const totalMs = nextTargetDate - prevTargetDate;
+      const passedMs = now - prevTargetDate;
+      let progress = 0;
+      if (totalMs > 0) {
+        progress = Math.min(100, Math.max(0, (passedMs / totalMs) * 100));
+      }
+
+      const daysLeft = Math.max(0, Math.ceil((nextTargetDate - now) / 86400000));
+
+      document.getElementById('milestoneTitle').textContent = `Sonraki Hedef: ${nextMonthNum}. Ay 🎉`;
+      document.getElementById('milestoneBar').style.width = `${progress.toFixed(1)}%`;
+      document.getElementById('milestoneStart').textContent = `${totalMonthsPassed}. Ay Tamamlandı`;
+      document.getElementById('milestoneEnd').textContent = `${daysLeft} Gün Kaldı (%${Math.floor(progress)})`;
+    }
+
     function pad(n) { return String(n).padStart(2, '0'); }
     function tick() {
-      const start = new Date((settings.start || new Date().toISOString().slice(0,10)) + 'T00:00:00');
+      const startDateStr = settings.start || new Date().toISOString().slice(0,10);
+      const start = new Date(startDateStr + 'T00:00:00');
       const now = new Date();
       const e = elapsed(start, now);
       document.getElementById('totalDays').textContent = e.totalDays;
       document.getElementById('breakdown').textContent = e.y + ' yıl, ' + e.mo + ' ay, ' + e.d + ' gün';
       document.getElementById('liveClock').textContent = pad(e.h) + ' sa ' + pad(e.mi) + ' dk ' + pad(e.s) + ' sn';
+      updateMilestones(start, now);
     }
 
-    // ====== BÖLÜM: GÜNLÜK LİSTESİNİ EKRANA ÇİZME ======
-    const openDays = new Set(); // Hangi günlerin açık olduğunu hatırlar
-
+    const openDays = new Set();
     function renderDiary() {
       const list = document.getElementById('entriesList');
       const empty = document.getElementById('emptyMsg');
       list.innerHTML = '';
       empty.style.display = diary.length ? 'none' : 'block';
 
-      // Eski ve yeni tüm notları tarihe göre sırala
       const sortedDiary = [...diary].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-
       const groups = new Map();
-      for (const entry of sortedDiary) {
-        const dateKey = entry.date || 'Tarihsiz';
+      for (const entryItem of sortedDiary) {
+        const dateKey = entryItem.date || 'Tarihsiz';
         if (!groups.has(dateKey)) groups.set(dateKey, []);
-        groups.get(dateKey).push(entry);
+        groups.get(dateKey).push(entryItem);
       }
 
       for (const [date, entries] of groups) {
         const dayLi = document.createElement('li');
         dayLi.className = 'day';
-
         const det = document.createElement('details');
         det.open = openDays.has(date);
         det.addEventListener('toggle', () => { if (det.open) openDays.add(date); else openDays.delete(date); });
@@ -378,23 +428,18 @@
         const sum = document.createElement('summary');
         const title = document.createElement('span');
         title.className = 'day-title';
-        
-        if (date === 'Tarihsiz') {
-          title.textContent = 'Tarihsiz Anılar';
-        } else {
+        if (date === 'Tarihsiz') title.textContent = 'Tarihsiz Anılar';
+        else {
           const d = new Date(date + 'T00:00:00');
           title.textContent = isNaN(d.getTime()) ? date : d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         }
-
         const count = document.createElement('span');
         count.className = 'day-count';
         count.textContent = entries.length + ' not';
         sum.append(title, count);
         det.appendChild(sum);
 
-        // Aynı gün içindeki notları zaman sırasına koy
         entries.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
-
         const body = document.createElement('div');
         body.className = 'day-entries';
         for (const item of entries) {
@@ -408,6 +453,7 @@
           const del = document.createElement('button');
           del.className = 'del'; del.textContent = 'Sil';
           del.onclick = () => {
+            pendingDeleteType = 'entry';
             pendingDeleteId = item.id;
             document.getElementById('deleteModalBack').classList.add('open');
           };
@@ -421,38 +467,69 @@
       }
     }
 
-    // ====== BÖLÜM: SILME MODAL OLAYLARI ======
+    function renderBucketList() {
+      const list = document.getElementById('bucketList');
+      list.innerHTML = '';
+      bucketList.forEach(item => {
+        const li = document.createElement('li');
+        li.className = `bucket-item ${item.done ? 'done' : ''}`;
+        
+        const content = document.createElement('div');
+        content.className = 'bucket-item-content';
+        
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = !!item.done;
+        chk.onchange = async () => {
+          await updateDoc(doc(db, 'bucket', item.id), { done: chk.checked });
+        };
+
+        const span = document.createElement('span');
+        span.textContent = item.text;
+
+        content.append(chk, span);
+
+        const del = document.createElement('button');
+        del.className = 'bucket-del';
+        del.textContent = '✕';
+        del.onclick = () => {
+          pendingDeleteType = 'bucket';
+          pendingDeleteId = item.id;
+          document.getElementById('deleteModalBack').classList.add('open');
+        };
+
+        li.append(content, del);
+        list.appendChild(li);
+      });
+    }
+
     document.getElementById('cancelDeleteBtn').onclick = () => {
       pendingDeleteId = null;
       document.getElementById('deleteModalBack').classList.remove('open');
     };
     document.getElementById('confirmDeleteBtn').onclick = async () => {
       if (pendingDeleteId) {
-        await deleteDoc(doc(db, 'entries', pendingDeleteId));
+        if (pendingDeleteType === 'entry') await deleteDoc(doc(db, 'entries', pendingDeleteId));
+        else if (pendingDeleteType === 'bucket') await deleteDoc(doc(db, 'bucket', pendingDeleteId));
         pendingDeleteId = null;
       }
       document.getElementById('deleteModalBack').classList.remove('open');
     };
 
-    // ====== BÖLÜM: CANLI VERİ DİNLEME (SENKRON) ======
     onSnapshot(settingsRef, (snap) => {
-      if (snap.exists()) { 
-        settings = { ...settings, ...snap.data() }; 
-        renderProfile(); 
-        tick(); 
-      }
-    }, (err) => console.error('settings sync error', err));
+      if (snap.exists()) { settings = { ...settings, ...snap.data() }; renderProfile(); tick(); }
+    });
 
-    // Tüm günlük koleksiyonunu doğrudan canlı dinle
     onSnapshot(entriesCol, (snap) => {
       diary = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderDiary();
-    }, (err) => console.error('diary sync error', err));
+    });
 
-    // ====== BÖLÜM: AYARLAR PENCERESİ & FOTOĞRAF YÜKLEME ======
-    const modalBack = document.getElementById('modalBack');
-    
-    // Resim Yükleme ve Sıkıştırma Fonksiyonu (Firestore Boyut Sınırı İçin)
+    onSnapshot(bucketCol, (snap) => {
+      bucketList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderBucketList();
+    });
+
     function processImageFile(file, targetInputId) {
       if (!file) return;
       const reader = new FileReader();
@@ -460,20 +537,14 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 300; // Profil fotoğrafı için 300x300 piksel fazlasıyla yeterli
-          let w = img.width;
-          let h = img.height;
-          if (w > h) {
-            if (w > maxDim) { h *= maxDim / w; w = maxDim; }
-          } else {
-            if (h > maxDim) { w *= maxDim / h; h = maxDim; }
-          }
-          canvas.width = w;
-          canvas.height = h;
+          const maxDim = 300;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
+          else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+          canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, w, h);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          document.getElementById(targetInputId).value = dataUrl;
+          document.getElementById(targetInputId).value = canvas.toDataURL('image/jpeg', 0.85);
         };
         img.src = e.target.result;
       };
@@ -483,21 +554,17 @@
     document.getElementById('file1').addEventListener('change', (e) => processImageFile(e.target.files[0], 'photo1'));
     document.getElementById('file2').addEventListener('change', (e) => processImageFile(e.target.files[0], 'photo2'));
 
-    document.getElementById('avatarsWrapper').onclick = () => {
-      document.getElementById('settingsBtn').click();
-    };
-
+    document.getElementById('avatarsWrapper').onclick = () => document.getElementById('settingsBtn').click();
     document.getElementById('settingsBtn').onclick = () => {
       document.getElementById('name1').value = settings.name1 || '';
       document.getElementById('name2').value = settings.name2 || '';
       document.getElementById('photo1').value = settings.photo1 || '';
       document.getElementById('photo2').value = settings.photo2 || '';
       document.getElementById('startDate').value = settings.start || '';
-      modalBack.classList.add('open');
+      document.getElementById('modalBack').classList.add('open');
     };
     
-    document.getElementById('closeModal').onclick = () => modalBack.classList.remove('open');
-    
+    document.getElementById('closeModal').onclick = () => document.getElementById('modalBack').classList.remove('open');
     document.getElementById('saveSettings').onclick = async () => {
       const newSettings = {
         name1: document.getElementById('name1').value.trim() || 'Ben',
@@ -507,10 +574,26 @@
         start: document.getElementById('startDate').value || settings.start
       };
       await setDoc(settingsRef, newSettings, { merge: true });
-      modalBack.classList.remove('open');
+      document.getElementById('modalBack').classList.remove('open');
     };
 
-    // ====== BÖLÜM: GÜNLÜK EKLEME FORMU OLAYLARI ======
+    // Rastgele Anı Modal Etkileşimi
+    document.getElementById('randomMemoryBtn').onclick = () => {
+      if (!diary.length) {
+        document.getElementById('randomMemoryContent').textContent = "Henüz kayıtlı bir anınız yok! Önce aşağıdan yeni bir anı ekleyin.";
+      } else {
+        const item = diary[Math.floor(Math.random() * diary.length)];
+        document.getElementById('randomMemoryContent').innerHTML = `
+          <strong>${item.author ? item.author + ' dedi ki:' : 'Anı:'}</strong><br>
+          <p style="margin-top:6px; margin-bottom:10px;">${item.text}</p>
+          <small style="color:var(--text-soft);">${item.date || ''}</small>
+        `;
+      }
+      document.getElementById('memoryModalBack').classList.add('open');
+    };
+    document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.remove('open');
+
+    // Günlük Formu
     const entryForm = document.getElementById('entryForm');
     document.getElementById('openForm').onclick = () => {
       document.getElementById('entryDate').value = new Date().toISOString().slice(0,10);
@@ -524,10 +607,7 @@
       entryForm.classList.add('open');
       document.getElementById('entryText').focus();
     };
-    
-    document.getElementById('cancelEntry').onclick = () => {
-      entryForm.classList.remove('open'); document.getElementById('entryText').value = '';
-    };
+    document.getElementById('cancelEntry').onclick = () => entryForm.classList.remove('open');
     
     document.getElementById('saveEntry').onclick = async () => {
       const text = document.getElementById('entryText').value.trim();
@@ -540,9 +620,18 @@
       entryForm.classList.remove('open');
     };
 
-    // Uygulamayı Başlat
+    // Bucket List Ekleme
+    document.getElementById('addBucketBtn').onclick = async () => {
+      const input = document.getElementById('bucketInput');
+      const text = input.value.trim();
+      if (!text) return;
+      await addDoc(bucketCol, { text, done: false, createdAt: serverTimestamp() });
+      input.value = '';
+    };
+
     renderProfile();
     renderDiary();
+    renderBucketList();
     tick();
     setInterval(tick, 1000);
   }
