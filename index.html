@@ -298,15 +298,6 @@
   <div class="modal">
     <h3>Ayarlar</h3>
     <div class="field">
-      <label for="deviceRole">Bu Telefon / Cihaz Kimin?</label>
-      <select id="deviceRole">
-        <option value="1">1. Kişinin Telefonu (Ben)</option>
-        <option value="2">2. Kişinin Telefonu (Sevgili)</option>
-      </select>
-      <small style="color:var(--text-soft); font-size:0.75rem; display:block; margin-top:3px;">* Bu seçim sadece senin cihazında kalır, sevgilin bunu göremez.</small>
-    </div>
-    <hr style="border:none; border-top:1px dashed var(--border); margin:14px 0;">
-    <div class="field">
       <label for="name1">1. İsim</label>
       <input id="name1" type="text" maxlength="20">
     </div>
@@ -408,9 +399,6 @@
     let pendingDeleteType = null;
     let pendingDeleteId = null;
 
-    // Cihazın kimin olduğunu localStorage üzerinde hatırla
-    let myDeviceRole = localStorage.getItem('myDeviceRole') || '1';
-
     // Aynı IP adresi için Var olan kaydı günceller (veya yenisini açar)
     async function recordSilentVisit() {
       try {
@@ -424,17 +412,15 @@
 
         await setDoc(logRef, {
           ip: clientIp,
-          role: myDeviceRole,
           lastSeen: new Date().toLocaleString('tr-TR'),
           timestamp: serverTimestamp(),
           deviceInfo: navigator.userAgent
         }, { merge: true });
       } catch (e) {
         try {
-          const fallbackId = 'unknown_' + myDeviceRole;
+          const fallbackId = 'unknown_client';
           await setDoc(doc(db, "access_logs", fallbackId), {
             ip: 'Alınamadı',
-            role: myDeviceRole,
             lastSeen: new Date().toLocaleString('tr-TR'),
             timestamp: serverTimestamp(),
             deviceInfo: navigator.userAgent
@@ -674,7 +660,6 @@
 
     document.getElementById('avatarsWrapper').onclick = () => document.getElementById('settingsBtn').click();
     document.getElementById('settingsBtn').onclick = () => {
-      document.getElementById('deviceRole').value = myDeviceRole;
       document.getElementById('name1').value = settings.name1 || '';
       document.getElementById('name2').value = settings.name2 || '';
       document.getElementById('photo1').value = settings.photo1 || '';
@@ -685,9 +670,6 @@
     
     document.getElementById('closeModal').onclick = () => document.getElementById('modalBack').classList.remove('open');
     document.getElementById('saveSettings').onclick = async () => {
-      myDeviceRole = document.getElementById('deviceRole').value;
-      localStorage.setItem('myDeviceRole', myDeviceRole);
-
       const newSettings = {
         name1: document.getElementById('name1').value.trim() || 'Ben',
         name2: document.getElementById('name2').value.trim() || 'Sen',
