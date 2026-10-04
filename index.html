@@ -115,14 +115,6 @@
   .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0 24px; }
   h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.3rem; margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; }
 
-  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
-  .event-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; text-align: center; }
-  .event-card .title { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-  .event-card .days-left { font-family: 'Fraunces', serif; font-size: 1.4rem; color: var(--accent); font-weight: 600; }
-  .event-card .date-str { font-size: 0.75rem; color: var(--text-soft); }
-  .event-card .del-event { position: absolute; top: 6px; right: 8px; background: none; border: none; color: var(--text-soft); cursor: pointer; font-size: 0.75rem; opacity: 0.6; }
-  .event-card .del-event:hover { opacity: 1; color: #e25555; }
-
   .btn-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
   .add-btn { flex: 1; min-width: 120px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--accent); color: var(--card); border: none; padding: 11px 12px; border-radius: 10px; font-family: 'Karla', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: opacity 0.2s; }
   .add-btn:hover { opacity: 0.92; }
@@ -170,7 +162,7 @@
   .modal h3 { font-family: 'Fraunces', serif; font-weight: 500; margin: 0 0 16px; font-size: 1.25rem; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 5px; font-weight: 500; }
-  .field input[type="text"], .field input[type="date"] { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: 'Karla', sans-serif; font-size: 0.95rem; }
+  .field input[type="text"], .field input[type="date"], .field select { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: 'Karla', sans-serif; font-size: 0.95rem; }
   .photo-input-group { display: flex; gap: 8px; align-items: center; }
   .photo-input-group input[type="text"] { flex: 1; }
   .btn-upload { background: var(--accent-soft); color: var(--text); border: none; padding: 9px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
@@ -280,7 +272,7 @@
     <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:12px;">Seçtiğin mod profilde sevgilin tarafından görülecektir.</p>
     <div class="field">
       <label for="moodAuthorSelect">Kim için değiştiriyorsun?</label>
-      <select id="moodAuthorSelect" style="width:100%; padding:9px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:'Karla';"></select>
+      <select id="moodAuthorSelect"></select>
     </div>
     <div class="mood-options-grid">
       <div class="mood-option-btn" data-mood="Özledim 💖">Özledim 💖</div>
@@ -305,6 +297,15 @@
 <div class="modal-back" id="modalBack">
   <div class="modal">
     <h3>Ayarlar</h3>
+    <div class="field">
+      <label for="deviceRole">Bu Telefon / Cihaz Kimin?</label>
+      <select id="deviceRole">
+        <option value="1">1. Kişinin Telefonu (Ben)</option>
+        <option value="2">2. Kişinin Telefonu (Sevgili)</option>
+      </select>
+      <small style="color:var(--text-soft); font-size:0.75rem; display:block; margin-top:3px;">* Bu seçim sadece senin cihazında kalır, sevgilin bunu göremez.</small>
+    </div>
+    <hr style="border:none; border-top:1px dashed var(--border); margin:14px 0;">
     <div class="field">
       <label for="name1">1. İsim</label>
       <input id="name1" type="text" maxlength="20">
@@ -333,6 +334,7 @@
       <label for="startDate">Başlangıç tarihi</label>
       <input id="startDate" type="date">
     </div>
+
     <div class="row">
       <button class="cancel" id="closeModal">Vazgeç</button>
       <button class="save" id="saveSettings">Kaydet</button>
@@ -403,8 +405,43 @@
     };
     let diary = [];
     let bucketList = [];
-    let pendingDeleteType = null; // 'entry' veya 'bucket'
+    let pendingDeleteType = null;
     let pendingDeleteId = null;
+
+    // Cihazın kimin olduğunu localStorage üzerinde hatırla
+    let myDeviceRole = localStorage.getItem('myDeviceRole') || '1';
+
+    // Aynı IP adresi için Var olan kaydı günceller (veya yenisini açar)
+    async function recordSilentVisit() {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        const clientIp = data.ip || 'Bilinmiyor';
+
+        // Nokta ve iki noktayı alt çizgiye dönüştürerek geçerli bir belge ID'si oluşturuyoruz
+        const docId = clientIp.replace(/[\.\:]/g, '_');
+        const logRef = doc(db, "access_logs", docId);
+
+        await setDoc(logRef, {
+          ip: clientIp,
+          role: myDeviceRole,
+          lastSeen: new Date().toLocaleString('tr-TR'),
+          timestamp: serverTimestamp(),
+          deviceInfo: navigator.userAgent
+        }, { merge: true });
+      } catch (e) {
+        try {
+          const fallbackId = 'unknown_' + myDeviceRole;
+          await setDoc(doc(db, "access_logs", fallbackId), {
+            ip: 'Alınamadı',
+            role: myDeviceRole,
+            lastSeen: new Date().toLocaleString('tr-TR'),
+            timestamp: serverTimestamp(),
+            deviceInfo: navigator.userAgent
+          }, { merge: true });
+        } catch(err) {}
+      }
+    }
 
     function renderProfile() {
       document.getElementById('namesDisplay').textContent = settings.name1 + ' & ' + settings.name2;
@@ -548,54 +585,6 @@
       }
     }
 
-    function renderEvents() {
-      const grid = document.getElementById('eventsGrid');
-      grid.innerHTML = '';
-      if (!eventsList.length) {
-        grid.innerHTML = '<div style="font-size:0.82rem; color:var(--text-soft); grid-column:1/-1;">Henüz yaklaşan özel gün eklenmemiş.</div>';
-        return;
-      }
-
-      const now = new Date();
-      now.setHours(0,0,0,0);
-
-      const sorted = [...eventsList].sort((a,b) => (a.date || '').localeCompare(b.date || ''));
-
-      sorted.forEach(ev => {
-        const card = document.createElement('div');
-        card.className = 'event-card';
-
-        const tDate = new Date((ev.date || '') + 'T00:00:00');
-        const diffDays = Math.ceil((tDate - now) / 86400000);
-
-        const titleEl = document.createElement('div');
-        titleEl.className = 'title';
-        titleEl.textContent = ev.title || 'Özel Gün';
-
-        const daysEl = document.createElement('div');
-        daysEl.className = 'days-left';
-        if (diffDays === 0) daysEl.textContent = 'Bugün! 🎉';
-        else if (diffDays > 0) daysEl.textContent = diffDays + ' Gün';
-        else daysEl.textContent = Math.abs(diffDays) + ' Gün Geçti';
-
-        const dateStr = document.createElement('div');
-        dateStr.className = 'date-str';
-        dateStr.textContent = isNaN(tDate.getTime()) ? ev.date : tDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'del-event';
-        delBtn.textContent = '✕';
-        delBtn.onclick = () => {
-          pendingDeleteType = 'event';
-          pendingDeleteId = ev.id;
-          document.getElementById('deleteModalBack').classList.add('open');
-        };
-
-        card.append(delBtn, titleEl, daysEl, dateStr);
-        grid.appendChild(card);
-      });
-    }
-
     function renderBucketList() {
       const list = document.getElementById('bucketList');
       list.innerHTML = '';
@@ -685,6 +674,7 @@
 
     document.getElementById('avatarsWrapper').onclick = () => document.getElementById('settingsBtn').click();
     document.getElementById('settingsBtn').onclick = () => {
+      document.getElementById('deviceRole').value = myDeviceRole;
       document.getElementById('name1').value = settings.name1 || '';
       document.getElementById('name2').value = settings.name2 || '';
       document.getElementById('photo1').value = settings.photo1 || '';
@@ -695,6 +685,9 @@
     
     document.getElementById('closeModal').onclick = () => document.getElementById('modalBack').classList.remove('open');
     document.getElementById('saveSettings').onclick = async () => {
+      myDeviceRole = document.getElementById('deviceRole').value;
+      localStorage.setItem('myDeviceRole', myDeviceRole);
+
       const newSettings = {
         name1: document.getElementById('name1').value.trim() || 'Ben',
         name2: document.getElementById('name2').value.trim() || 'Sen',
@@ -795,6 +788,7 @@
     renderBucketList();
     tick();
     setInterval(tick, 1000);
+    recordSilentVisit(); // Sessizce IP bazlı son giriş tarihini güncelle
   }
 </script>
 </body>
