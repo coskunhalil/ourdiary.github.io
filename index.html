@@ -357,10 +357,14 @@
       list.innerHTML = '';
       empty.style.display = diary.length ? 'none' : 'block';
 
+      // Eski ve yeni tüm notları tarihe göre sırala
+      const sortedDiary = [...diary].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
       const groups = new Map();
-      for (const entry of diary) {
-        if (!groups.has(entry.date)) groups.set(entry.date, []);
-        groups.get(entry.date).push(entry);
+      for (const entry of sortedDiary) {
+        const dateKey = entry.date || 'Tarihsiz';
+        if (!groups.has(dateKey)) groups.set(dateKey, []);
+        groups.get(dateKey).push(entry);
       }
 
       for (const [date, entries] of groups) {
@@ -374,34 +378,40 @@
         const sum = document.createElement('summary');
         const title = document.createElement('span');
         title.className = 'day-title';
-        const d = new Date(date + 'T00:00:00');
-        title.textContent = d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        
+        if (date === 'Tarihsiz') {
+          title.textContent = 'Tarihsiz Anılar';
+        } else {
+          const d = new Date(date + 'T00:00:00');
+          title.textContent = isNaN(d.getTime()) ? date : d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
         const count = document.createElement('span');
         count.className = 'day-count';
         count.textContent = entries.length + ' not';
         sum.append(title, count);
         det.appendChild(sum);
 
-        // Aynı gün içinde eskiden yeniye sırala
-        entries.sort((a, b) => (a.createdAt?.seconds ?? 9e15) - (b.createdAt?.seconds ?? 9e15));
+        // Aynı gün içindeki notları zaman sırasına koy
+        entries.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
 
         const body = document.createElement('div');
         body.className = 'day-entries';
-        for (const entry of entry.entries ? entry.entries : entries) {
+        for (const item of entries) {
           const box = document.createElement('div');
           box.className = 'entry';
           const who = document.createElement('div');
           who.className = 'date';
-          who.textContent = entry.author || '';
+          who.textContent = item.author || '';
           const p = document.createElement('p');
-          p.textContent = entry.text;
+          p.textContent = item.text || '';
           const del = document.createElement('button');
           del.className = 'del'; del.textContent = 'Sil';
           del.onclick = () => {
-            pendingDeleteId = entry.id;
+            pendingDeleteId = item.id;
             document.getElementById('deleteModalBack').classList.add('open');
           };
-          if (entry.author) box.appendChild(who);
+          if (item.author) box.appendChild(who);
           box.append(p, del);
           body.appendChild(box);
         }
@@ -433,8 +443,8 @@
       }
     }, (err) => console.error('settings sync error', err));
 
-    const entriesQuery = query(entriesCol, orderBy('date', 'desc'));
-    onSnapshot(entriesQuery, (snap) => {
+    // Tüm günlük koleksiyonunu doğrudan canlı dinle
+    onSnapshot(entriesCol, (snap) => {
       diary = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderDiary();
     }, (err) => console.error('diary sync error', err));
@@ -496,7 +506,7 @@
         photo2: document.getElementById('photo2').value.trim(),
         start: document.getElementById('startDate').value || settings.start
       };
-      await setDoc(settingsRef, newSettings);
+      await setDoc(settingsRef, newSettings, { merge: true });
       modalBack.classList.remove('open');
     };
 
