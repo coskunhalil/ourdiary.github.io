@@ -69,6 +69,16 @@
   .entry-form .save { background: var(--accent); color: var(--card); border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
   .entry-form .cancel { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 9px 6px; }
   /* ====== BÖLÜM: GÜNLÜK NOT LİSTESİ ====== */
+  /* YENİ EKLENDİ: gün başlığına basınca o günün notları açılır */
+  .day { margin-bottom: 6px; }
+  .day summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .day summary::-webkit-details-marker { display: none; }
+  .day summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .day summary::after { content: ''; width: 8px; height: 8px; border-right: 2px solid var(--text-soft); border-bottom: 2px solid var(--text-soft); transform: rotate(45deg); transition: transform 0.2s; flex-shrink: 0; margin-left: 4px; }
+  .day details[open] summary::after { transform: rotate(-135deg); }
+  .day-title { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.05rem; color: var(--accent); flex: 1; }
+  .day-count { font-size: 0.8rem; color: var(--text-soft); }
+  .day-entries { padding-top: 16px; }
   .entries { list-style: none; padding: 0; margin: 0; }
   .entry { border-left: 2px solid var(--accent-soft); padding: 4px 0 4px 16px; margin-bottom: 22px; }
   .entry .date { font-size: 0.8rem; color: var(--text-soft); margin-bottom: 4px; }
@@ -77,16 +87,6 @@
   .entry .del:hover { color: var(--accent); }
   .empty { color: var(--text-soft); font-size: 0.92rem; }
   /* ====== BÖLÜM: AYARLAR PENCERESİ (MODAL) ====== */
-  /* YENİ EKLENDİ: gün başlığına basınca o günün notları açılır */
-.day { margin-bottom: 6px; }
-.day summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.day summary::-webkit-details-marker { display: none; }
-.day summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.day summary::after { content: ''; width: 8px; height: 8px; border-right: 2px solid var(--text-soft); border-bottom: 2px solid var(--text-soft); transform: rotate(45deg); transition: transform 0.2s; flex-shrink: 0; margin-left: 4px; }
-.day details[open] summary::after { transform: rotate(-135deg); }
-.day-title { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.05rem; color: var(--accent); flex: 1; }
-.day-count { font-size: 0.8rem; color: var(--text-soft); }
-.day-entries { padding-top: 16px; }
   .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 20px; z-index: 10; }
   .modal-back.open { display: flex; }
   .modal { background: var(--card); border-radius: 12px; padding: 22px; width: 100%; max-width: 360px; }
@@ -215,67 +215,69 @@
 
     // ====== BÖLÜM: GÜNLÜK LİSTESİNİ EKRANA ÇİZME ======
     // YENİ EKLENDİ: gün başlığına basınca o günün notları açılır
-    const openDays = new Set();
-    
+    const openDays = new Set(); // hangi günlerin açık olduğunu hatırlar
+
     function renderDiary() {
       const list = document.getElementById('entriesList');
-  const empty = document.getElementById('emptyMsg');
-  list.innerHTML = '';
-  empty.style.display = diary.length ? 'none' : 'block';
+      const empty = document.getElementById('emptyMsg');
+      list.innerHTML = '';
+      empty.style.display = diary.length ? 'none' : 'block';
 
-  const groups = new Map();
-  for (const entry of diary) {
-    if (!groups.has(entry.date)) groups.set(entry.date, []);
-    groups.get(entry.date).push(entry);
-  }
+      const groups = new Map();
+      for (const entry of diary) {
+        if (!groups.has(entry.date)) groups.set(entry.date, []);
+        groups.get(entry.date).push(entry);
+      }
 
-  for (const [date, entries] of groups) {
-    const dayLi = document.createElement('li');
-    dayLi.className = 'day';
+      for (const [date, entries] of groups) {
+        const dayLi = document.createElement('li');
+        dayLi.className = 'day';
 
-    const det = document.createElement('details');
-    det.open = openDays.has(date);
-    det.addEventListener('toggle', () => { if (det.open) openDays.add(date); else openDays.delete(date); });
+        const det = document.createElement('details');
+        det.open = openDays.has(date);
+        det.addEventListener('toggle', () => { if (det.open) openDays.add(date); else openDays.delete(date); });
 
-    const sum = document.createElement('summary');
-    const title = document.createElement('span');
-    title.className = 'day-title';
-    const d = new Date(date + 'T00:00:00');
-    title.textContent = d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const count = document.createElement('span');
-    count.className = 'day-count';
-    count.textContent = entries.length + ' not';
-    sum.append(title, count);
-    det.appendChild(sum);
+        const sum = document.createElement('summary');
+        const title = document.createElement('span');
+        title.className = 'day-title';
+        const d = new Date(date + 'T00:00:00');
+        title.textContent = d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const count = document.createElement('span');
+        count.className = 'day-count';
+        count.textContent = entries.length + ' not';
+        sum.append(title, count);
+        det.appendChild(sum);
 
-    // aynı gün içinde eskiden yeniye sırala
-    entries.sort((a, b) => (a.createdAt?.seconds ?? 9e15) - (b.createdAt?.seconds ?? 9e15));
+        // aynı gün içinde eskiden yeniye sırala
+        entries.sort((a, b) => (a.createdAt?.seconds ?? 9e15) - (b.createdAt?.seconds ?? 9e15));
 
-    const body = document.createElement('div');
-    body.className = 'day-entries';
-    for (const entry of entries) {
-      const box = document.createElement('div');
-      box.className = 'entry';
-      const who = document.createElement('div');
-      who.className = 'date';
-      who.textContent = entry.author || '';
-      const p = document.createElement('p');
-      p.textContent = entry.text;
-      const del = document.createElement('button');
-      del.className = 'del'; del.textContent = 'Sil';
-      del.onclick = () => {
-        if (confirm('Bu notu silmek istediğine emin misin?')) {
-          deleteDoc(doc(db, 'entries', entry.id));
+        const body = document.createElement('div');
+        body.className = 'day-entries';
+        for (const entry of entries) {
+          const box = document.createElement('div');
+          box.className = 'entry';
+          const who = document.createElement('div');
+          who.className = 'date';
+          who.textContent = entry.author || '';
+          const p = document.createElement('p');
+          p.textContent = entry.text;
+          const del = document.createElement('button');
+          del.className = 'del'; del.textContent = 'Sil';
+          del.onclick = () => {
+            if (confirm('Bu notu silmek istediğine emin misin?')) {
+              deleteDoc(doc(db, 'entries', entry.id));
+            }
+          };
+          if (entry.author) box.appendChild(who);
+          box.append(p, del);
+          body.appendChild(box);
         }
-      };
-      if (entry.author) box.appendChild(who);
-      box.append(p, del);
-      body.appendChild(box);
+        det.appendChild(body);
+        dayLi.appendChild(det);
+        list.appendChild(dayLi);
+      }
     }
-    det.appendChild(body);
-    dayLi.appendChild(det);
-    list.appendChild(dayLi);
-  }
+
     // ====== BÖLÜM: CANLI VERİ DİNLEME (SENKRON) ======
     onSnapshot(settingsRef, (snap) => {
       if (snap.exists()) { settings = snap.data(); renderNames(); tick(); }
@@ -328,7 +330,7 @@
       const date = document.getElementById('entryDate').value || new Date().toISOString().slice(0,10);
       const author = document.getElementById('entryAuthor').value || settings.name1;
       if (!text) return;
-      openDays.add(date); // YENİ EKLENDİ: not eklenen gün otomatik açılsın
+      openDays.add(date);
       await addDoc(entriesCol, { date, text, author, createdAt: serverTimestamp() });
       document.getElementById('entryText').value = '';
       entryForm.classList.remove('open');
