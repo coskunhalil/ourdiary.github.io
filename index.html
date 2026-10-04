@@ -36,6 +36,7 @@
     color: var(--text); font-family: 'Karla', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+
   .wrap { max-width: 580px; margin: 0 auto; padding: 28px 20px 64px; }
   
   .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -74,11 +75,34 @@
   }
   @keyframes heartPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
 
-  .names { font-family: 'Fraunces', serif; font-weight: 500; font-size: clamp(1.6rem, 6vw, 2.3rem); text-align: center; margin: 12px 0 6px; animation: rise 0.6s ease-out; }
-  .hero { text-align: center; padding: 12px 0 20px; }
+  .mood-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .mood-badge {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+  }
+  .mood-badge:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+  .names { font-family: 'Fraunces', serif; font-weight: 500; font-size: clamp(1.6rem, 6vw, 2.3rem); text-align: center; margin: 8px 0 4px; animation: rise 0.6s ease-out; }
+  
+  .hero { text-align: center; padding: 8px 0 18px; }
   .hero .count { font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(4rem, 22vw, 6.5rem); line-height: 1; color: var(--accent); animation: rise 0.7s ease-out; }
   .hero .label { color: var(--text-soft); margin-top: 6px; font-size: 1rem; }
-  .hero .sub { margin-top: 14px; font-variant-numeric: tabular-nums; font-size: 1rem; color: var(--text-soft); letter-spacing: 0.02em; }
+  .hero .sub { margin-top: 12px; font-variant-numeric: tabular-nums; font-size: 0.95rem; color: var(--text-soft); letter-spacing: 0.02em; }
   .hero .breakdown { margin-top: 4px; font-size: 0.88rem; color: var(--text-soft); }
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -88,11 +112,19 @@
   .milestone-bar { background: var(--accent); height: 100%; border-radius: 10px; transition: width 0.6s ease; }
   .milestone-details { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; color: var(--text); }
 
-  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0 24px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0 24px; }
   h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.3rem; margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; }
-  
-  .btn-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-  .add-btn { flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: var(--card); border: none; padding: 11px 16px; border-radius: 10px; font-family: 'Karla', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; transition: opacity 0.2s; }
+
+  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .event-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; text-align: center; }
+  .event-card .title { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .event-card .days-left { font-family: 'Fraunces', serif; font-size: 1.4rem; color: var(--accent); font-weight: 600; }
+  .event-card .date-str { font-size: 0.75rem; color: var(--text-soft); }
+  .event-card .del-event { position: absolute; top: 6px; right: 8px; background: none; border: none; color: var(--text-soft); cursor: pointer; font-size: 0.75rem; opacity: 0.6; }
+  .event-card .del-event:hover { opacity: 1; color: #e25555; }
+
+  .btn-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .add-btn { flex: 1; min-width: 120px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--accent); color: var(--card); border: none; padding: 11px 12px; border-radius: 10px; font-family: 'Karla', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: opacity 0.2s; }
   .add-btn:hover { opacity: 0.92; }
   .surprise-btn { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); }
   .surprise-btn:hover { background: var(--card); }
@@ -121,7 +153,7 @@
   .entry .del:hover { color: #e25555; }
   .empty { color: var(--text-soft); font-size: 0.92rem; }
 
-  .bucket-section { margin-top: 36px; }
+  .bucket-section { margin-top: 24px; }
   .bucket-add-row { display: flex; gap: 8px; margin-bottom: 14px; }
   .bucket-add-row input { flex: 1; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-family: 'Karla', sans-serif; }
   .bucket-add-row button { background: var(--accent); color: var(--card); border: none; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
@@ -145,6 +177,11 @@
   .modal .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
   .modal .save { background: var(--accent); color: var(--card); border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; }
   .modal .cancel { background: none; border: none; color: var(--text-soft); cursor: pointer; padding: 9px 8px; }
+  
+  .mood-options-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 14px 0; }
+  .mood-option-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+  .mood-option-btn:hover { background: var(--bg-soft); border-color: var(--accent); }
+
   .setup-warning { max-width: 440px; margin: 60px auto; padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; text-align: center; font-family: 'Karla', sans-serif; line-height: 1.6; }
 </style>
 </head>
@@ -167,6 +204,16 @@
     </div>
     <div class="avatar-frame right">
       <img id="photo2Img" src="" alt="Partner 2" />
+    </div>
+  </div>
+
+  <!-- RUH HALİ (MOOD) ETİKETLERİ -->
+  <div class="mood-container">
+    <div class="mood-badge" id="moodBadge1" title="Modunu değiştirmek için tıkla">
+      <span id="moodBadgeName1">Ben</span>: <span id="moodBadgeText1">Özledim 💖</span>
+    </div>
+    <div class="mood-badge" id="moodBadge2" title="Modunu değiştirmek için tıkla">
+      <span id="moodBadgeName2">Sen</span>: <span id="moodBadgeText2">Mutlu 😊</span>
     </div>
   </div>
 
@@ -223,6 +270,34 @@
       <button id="addBucketBtn">Ekle</button>
     </div>
     <ul class="bucket-list" id="bucketList"></ul>
+  </div>
+</div>
+
+<!-- MOD DEĞİŞTİRME MODALI -->
+<div class="modal-back" id="moodModalBack">
+  <div class="modal">
+    <h3>Bugün Nasıl Hissediyorsun?</h3>
+    <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:12px;">Seçtiğin mod profilde sevgilin tarafından görülecektir.</p>
+    <div class="field">
+      <label for="moodAuthorSelect">Kim için değiştiriyorsun?</label>
+      <select id="moodAuthorSelect" style="width:100%; padding:9px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:'Karla';"></select>
+    </div>
+    <div class="mood-options-grid">
+      <div class="mood-option-btn" data-mood="Özledim 💖">Özledim 💖</div>
+      <div class="mood-option-btn" data-mood="Çok Mutluyum 😊">Çok Mutluyum 😊</div>
+      <div class="mood-option-btn" data-mood="Sarılmak İstiyorum 🫂">Sarılmak İstiyorum 🫂</div>
+      <div class="mood-option-btn" data-mood="Kahve Molası ☕">Kahve Molası ☕</div>
+      <div class="mood-option-btn" data-mood="Seni Düşünüyorum 💭">Seni Düşünüyorum 💭</div>
+      <div class="mood-option-btn" data-mood="Gezmek İstiyorum ✈️">Gezmek İstiyorum ✈️</div>
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <label for="customMoodInput">Veya Özel Bir Şey Yaz:</label>
+      <input type="text" id="customMoodInput" placeholder="Örn: Sınava çalışıyorum 📚">
+    </div>
+    <div class="row">
+      <button class="cancel" id="closeMoodModal">Vazgeç</button>
+      <button class="save" id="saveCustomMoodBtn">Kaydet</button>
+    </div>
   </div>
 </div>
 
@@ -322,7 +397,9 @@
       name2: 'Sen', 
       start: new Date().toISOString().slice(0,10),
       photo1: '',
-      photo2: ''
+      photo2: '',
+      mood1: 'Özledim 💖',
+      mood2: 'Mutlu 😊'
     };
     let diary = [];
     let bucketList = [];
@@ -338,6 +415,12 @@
       img1.onerror = () => { img1.src = defaultAvatar1; };
       img2.src = settings.photo2 || defaultAvatar2;
       img2.onerror = () => { img2.src = defaultAvatar2; };
+
+      // Mod Rozetlerini Güncelle
+      document.getElementById('moodBadgeName1').textContent = settings.name1 || 'Ben';
+      document.getElementById('moodBadgeText1').textContent = settings.mood1 || 'Özledim 💖';
+      document.getElementById('moodBadgeName2').textContent = settings.name2 || 'Sen';
+      document.getElementById('moodBadgeText2').textContent = settings.mood2 || 'Mutlu 😊';
     }
 
     function elapsed(start, now) {
@@ -356,7 +439,6 @@
       return { y, mo, d, h, mi, s, totalDays };
     }
 
-    // AYLIK HEDEF HESAPLAMA (Her Ay İçin)
     function updateMilestones(start, now) {
       let y = now.getFullYear() - start.getFullYear();
       let mo = now.getMonth() - start.getMonth();
@@ -369,7 +451,6 @@
 
       const nextMonthNum = totalMonthsPassed + 1;
 
-      // Geçmiş ay dönümü ve sonraki ay dönümü tarihlerini hesapla
       const prevTargetDate = new Date(start);
       prevTargetDate.setMonth(start.getMonth() + totalMonthsPassed);
 
@@ -465,6 +546,54 @@
         dayLi.appendChild(det);
         list.appendChild(dayLi);
       }
+    }
+
+    function renderEvents() {
+      const grid = document.getElementById('eventsGrid');
+      grid.innerHTML = '';
+      if (!eventsList.length) {
+        grid.innerHTML = '<div style="font-size:0.82rem; color:var(--text-soft); grid-column:1/-1;">Henüz yaklaşan özel gün eklenmemiş.</div>';
+        return;
+      }
+
+      const now = new Date();
+      now.setHours(0,0,0,0);
+
+      const sorted = [...eventsList].sort((a,b) => (a.date || '').localeCompare(b.date || ''));
+
+      sorted.forEach(ev => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+
+        const tDate = new Date((ev.date || '') + 'T00:00:00');
+        const diffDays = Math.ceil((tDate - now) / 86400000);
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'title';
+        titleEl.textContent = ev.title || 'Özel Gün';
+
+        const daysEl = document.createElement('div');
+        daysEl.className = 'days-left';
+        if (diffDays === 0) daysEl.textContent = 'Bugün! 🎉';
+        else if (diffDays > 0) daysEl.textContent = diffDays + ' Gün';
+        else daysEl.textContent = Math.abs(diffDays) + ' Gün Geçti';
+
+        const dateStr = document.createElement('div');
+        dateStr.className = 'date-str';
+        dateStr.textContent = isNaN(tDate.getTime()) ? ev.date : tDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-event';
+        delBtn.textContent = '✕';
+        delBtn.onclick = () => {
+          pendingDeleteType = 'event';
+          pendingDeleteId = ev.id;
+          document.getElementById('deleteModalBack').classList.add('open');
+        };
+
+        card.append(delBtn, titleEl, daysEl, dateStr);
+        grid.appendChild(card);
+      });
     }
 
     function renderBucketList() {
@@ -575,6 +704,38 @@
       };
       await setDoc(settingsRef, newSettings, { merge: true });
       document.getElementById('modalBack').classList.remove('open');
+    };
+
+    // MOD SEÇİMİ İŞLEMLERİ
+    const moodModalBack = document.getElementById('moodModalBack');
+    const openMoodModal = () => {
+      const sel = document.getElementById('moodAuthorSelect');
+      sel.innerHTML = '';
+      const opt1 = document.createElement('option'); opt1.value = '1'; opt1.textContent = settings.name1 || 'Ben';
+      const opt2 = document.createElement('option'); opt2.value = '2'; opt2.textContent = settings.name2 || 'Sen';
+      sel.append(opt1, opt2);
+      document.getElementById('customMoodInput').value = '';
+      moodModalBack.classList.add('open');
+    };
+
+    document.getElementById('moodBadge1').onclick = openMoodModal;
+    document.getElementById('moodBadge2').onclick = openMoodModal;
+    document.getElementById('closeMoodModal').onclick = () => moodModalBack.classList.remove('open');
+
+    const updateMoodInFirebase = async (moodVal) => {
+      const which = document.getElementById('moodAuthorSelect').value;
+      const fieldToUpdate = which === '1' ? { mood1: moodVal } : { mood2: moodVal };
+      await setDoc(settingsRef, fieldToUpdate, { merge: true });
+      moodModalBack.classList.remove('open');
+    };
+
+    document.querySelectorAll('.mood-option-btn').forEach(btn => {
+      btn.onclick = () => updateMoodInFirebase(btn.dataset.mood);
+    });
+
+    document.getElementById('saveCustomMoodBtn').onclick = () => {
+      const text = document.getElementById('customMoodInput').value.trim();
+      if (text) updateMoodInFirebase(text);
     };
 
     // Rastgele Anı Modal Etkileşimi
