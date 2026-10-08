@@ -141,7 +141,9 @@
   .entry { border-left: 2px solid var(--accent-soft); padding: 4px 0 4px 16px; margin-bottom: 22px; position: relative; }
   .entry .date { font-size: 0.8rem; color: var(--text-soft); margin-bottom: 4px; font-weight: 700; }
   .entry p { margin: 0; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .entry .del { background: none; border: none; color: var(--text-soft); font-size: 0.78rem; cursor: pointer; padding: 4px 0; margin-top: 4px; transition: color 0.2s; }
+  .entry-photo-thumb { margin-top: 10px; max-width: 100%; max-height: 240px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s; }
+  .entry-photo-thumb:hover { transform: scale(1.02); }
+  .entry .del { background: none; border: none; color: var(--text-soft); font-size: 0.78rem; cursor: pointer; padding: 4px 0; margin-top: 6px; transition: color 0.2s; display: block; }
   .entry .del:hover { color: #e25555; }
   .empty { color: var(--text-soft); font-size: 0.92rem; }
 
@@ -173,6 +175,12 @@
   .mood-options-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 14px 0; }
   .mood-option-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
   .mood-option-btn:hover { background: var(--bg-soft); border-color: var(--accent); }
+
+  /* Büyütülen Fotoğraf Modalı */
+  .lightbox-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 200; padding: 16px; backdrop-filter: blur(5px); }
+  .lightbox-modal.open { display: flex; }
+  .lightbox-img { max-width: 92vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; }
+  .lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; }
 
   .setup-warning { max-width: 440px; margin: 60px auto; padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; text-align: center; font-family: 'Karla', sans-serif; line-height: 1.6; }
 </style>
@@ -240,8 +248,23 @@
     <button class="add-btn surprise-btn" id="randomMemoryBtn">✨ Rastgele Anı</button>
   </div>
 
+  <!-- GÜNLÜK NOT EKLEME FORMU (FOTOĞRAF DESTEKLİ) -->
   <div class="entry-form" id="entryForm">
     <textarea id="entryText" placeholder="Bugün ne oldu, ne hissettin..."></textarea>
+    
+    <div class="field" style="margin-top:10px;">
+      <label style="font-size:0.82rem; color:var(--text-soft); font-weight:500;">Anı Fotoğrafı (İsteğe Bağlı):</label>
+      <div class="photo-input-group">
+        <input id="entryPhoto" type="text" placeholder="Görsel URL veya resim seçin">
+        <button type="button" class="btn-upload" onclick="document.getElementById('entryFile').click()">Fotoğraf Seç</button>
+        <input type="file" id="entryFile" accept="image/*" style="display:none">
+      </div>
+      <div id="entryPhotoPreviewContainer" style="display:none; margin-top:10px; position:relative; inline-block;">
+        <img id="entryPhotoPreview" src="" style="max-height:120px; border-radius:8px; border:1px solid var(--border); object-fit:cover;">
+        <button type="button" id="removeEntryPhoto" style="background:#e25555; color:white; border:none; border-radius:50%; width:22px; height:22px; cursor:pointer; font-size:12px; margin-left:6px; vertical-align:top;">✕</button>
+      </div>
+    </div>
+
     <div class="row">
       <select id="entryAuthor" aria-label="Kim yazıyor"></select>
       <input type="date" id="entryDate">
@@ -356,6 +379,12 @@
   </div>
 </div>
 
+<!-- FOTOĞRAF BÜYÜTME (LIGHTBOX) MODALI -->
+<div class="lightbox-modal" id="lightboxModal">
+  <button class="lightbox-close" id="closeLightbox">✕</button>
+  <img id="lightboxImg" class="lightbox-img" src="" alt="Büyük Anı Fotoğrafı">
+</div>
+
 <script type="module">
   const firebaseConfig = {
     apiKey: "AIzaSyCpkEjaHtcuNKCbMa-dVh20_LzFI8k7BeE",
@@ -399,7 +428,6 @@
     let pendingDeleteType = null;
     let pendingDeleteId = null;
 
-    // Cihaz türünü, işletim sistemini ve ekran çözünürlüğünü anlaşılır hale getiren yardımcı fonksiyon
     function getReadableDeviceInfo() {
       const ua = navigator.userAgent;
       let os = "Bilinmeyen Cihaz";
@@ -420,14 +448,12 @@
       return `${os} (${browser} - ${screenRes})`;
     }
 
-    // Aynı IP adresi için Var olan kaydı günceller (veya yenisini açar)
     async function recordSilentVisit() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
         const clientIp = data.ip || 'Bilinmiyor';
 
-        // Nokta ve iki noktayı alt çizgiye dönüştürerek geçerli bir belge ID'si oluşturuyoruz
         const docId = clientIp.replace(/[\.\:]/g, '_');
         const logRef = doc(db, "access_logs", docId);
 
@@ -462,7 +488,6 @@
       img2.src = settings.photo2 || defaultAvatar2;
       img2.onerror = () => { img2.src = defaultAvatar2; };
 
-      // Mod Rozetlerini Güncelle
       document.getElementById('moodBadgeName1').textContent = settings.name1 || 'Ben';
       document.getElementById('moodBadgeText1').textContent = settings.mood1 || 'Özledim 💖';
       document.getElementById('moodBadgeName2').textContent = settings.name2 || 'Sen';
@@ -572,20 +597,37 @@
         for (const item of entries) {
           const box = document.createElement('div');
           box.className = 'entry';
+          
           const who = document.createElement('div');
           who.className = 'date';
           who.textContent = item.author || '';
+          
           const p = document.createElement('p');
           p.textContent = item.text || '';
+          
+          if (item.author) box.appendChild(who);
+          box.appendChild(p);
+
+          // Anı Fotoğrafı Varsa Göster
+          if (item.photo) {
+            const img = document.createElement('img');
+            img.src = item.photo;
+            img.className = 'entry-photo-thumb';
+            img.alt = 'Anı Fotoğrafı';
+            img.onclick = () => openLightbox(item.photo);
+            box.appendChild(img);
+          }
+
           const del = document.createElement('button');
-          del.className = 'del'; del.textContent = 'Sil';
+          del.className = 'del'; 
+          del.textContent = 'Sil';
           del.onclick = () => {
             pendingDeleteType = 'entry';
             pendingDeleteId = item.id;
             document.getElementById('deleteModalBack').classList.add('open');
           };
-          if (item.author) box.appendChild(who);
-          box.append(p, del);
+          box.appendChild(del);
+
           body.appendChild(box);
         }
         det.appendChild(body);
@@ -630,6 +672,20 @@
       });
     }
 
+    // Lightbox Fotoğraf Büyütme İşlemleri
+    function openLightbox(url) {
+      document.getElementById('lightboxImg').src = url;
+      document.getElementById('lightboxModal').classList.add('open');
+    }
+    document.getElementById('closeLightbox').onclick = () => {
+      document.getElementById('lightboxModal').classList.remove('open');
+    };
+    document.getElementById('lightboxModal').onclick = (e) => {
+      if (e.target.id === 'lightboxModal') {
+        document.getElementById('lightboxModal').classList.remove('open');
+      }
+    };
+
     document.getElementById('cancelDeleteBtn').onclick = () => {
       pendingDeleteId = null;
       document.getElementById('deleteModalBack').classList.remove('open');
@@ -657,29 +713,58 @@
       renderBucketList();
     });
 
-    function processImageFile(file, targetInputId) {
+    function processImageFile(file, callback, maxDim = 600) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxDim = 300;
           let w = img.width, h = img.height;
           if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
           else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, w, h);
-          document.getElementById(targetInputId).value = canvas.toDataURL('image/jpeg', 0.85);
+          callback(canvas.toDataURL('image/jpeg', 0.8));
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    document.getElementById('file1').addEventListener('change', (e) => processImageFile(e.target.files[0], 'photo1'));
-    document.getElementById('file2').addEventListener('change', (e) => processImageFile(e.target.files[0], 'photo2'));
+    document.getElementById('file1').addEventListener('change', (e) => processImageFile(e.target.files[0], (data) => {
+      document.getElementById('photo1').value = data;
+    }, 300));
+    
+    document.getElementById('file2').addEventListener('change', (e) => processImageFile(e.target.files[0], (data) => {
+      document.getElementById('photo2').value = data;
+    }, 300));
+
+    // Günlük Notu Fotoğraf Seçimi
+    document.getElementById('entryFile').addEventListener('change', (e) => {
+      processImageFile(e.target.files[0], (data) => {
+        document.getElementById('entryPhoto').value = data;
+        document.getElementById('entryPhotoPreview').src = data;
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'inline-block';
+      }, 700);
+    });
+
+    document.getElementById('entryPhoto').addEventListener('input', (e) => {
+      const url = e.target.value.trim();
+      if (url) {
+        document.getElementById('entryPhotoPreview').src = url;
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'inline-block';
+      } else {
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+      }
+    });
+
+    document.getElementById('removeEntryPhoto').onclick = () => {
+      document.getElementById('entryPhoto').value = '';
+      document.getElementById('entryFile').value = '';
+      document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+    };
 
     document.getElementById('avatarsWrapper').onclick = () => document.getElementById('settingsBtn').click();
     document.getElementById('settingsBtn').onclick = () => {
@@ -742,17 +827,18 @@
         document.getElementById('randomMemoryContent').textContent = "Henüz kayıtlı bir anınız yok! Önce aşağıdan yeni bir anı ekleyin.";
       } else {
         const item = diary[Math.floor(Math.random() * diary.length)];
-        document.getElementById('randomMemoryContent').innerHTML = `
-          <strong>${item.author ? item.author + ' dedi ki:' : 'Anı:'}</strong><br>
-          <p style="margin-top:6px; margin-bottom:10px;">${item.text}</p>
-          <small style="color:var(--text-soft);">${item.date || ''}</small>
-        `;
+        let contentHtml = `<strong>${item.author ? item.author + ' dedi ki:' : 'Anı:'}</strong><br><p style="margin-top:6px; margin-bottom:10px;">${item.text}</p>`;
+        if (item.photo) {
+          contentHtml += `<img src="${item.photo}" style="max-width:100%; max-height:200px; border-radius:8px; margin-bottom:8px; display:block; cursor:pointer;" onclick="openLightbox('${item.photo}')">`;
+        }
+        contentHtml += `<small style="color:var(--text-soft);">${item.date || ''}</small>`;
+        document.getElementById('randomMemoryContent').innerHTML = contentHtml;
       }
       document.getElementById('memoryModalBack').classList.add('open');
     };
     document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.remove('open');
 
-    // Günlük Formu
+    // Günlük Formu İşlemleri
     const entryForm = document.getElementById('entryForm');
     document.getElementById('openForm').onclick = () => {
       document.getElementById('entryDate').value = new Date().toISOString().slice(0,10);
@@ -763,19 +849,36 @@
         opt.value = n; opt.textContent = n;
         sel.appendChild(opt);
       });
+      document.getElementById('entryPhoto').value = '';
+      document.getElementById('entryFile').value = '';
+      document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
       entryForm.classList.add('open');
       document.getElementById('entryText').focus();
     };
+    
     document.getElementById('cancelEntry').onclick = () => entryForm.classList.remove('open');
     
     document.getElementById('saveEntry').onclick = async () => {
       const text = document.getElementById('entryText').value.trim();
       const date = document.getElementById('entryDate').value || new Date().toISOString().slice(0,10);
       const author = document.getElementById('entryAuthor').value || settings.name1;
-      if (!text) return;
+      const photo = document.getElementById('entryPhoto').value.trim() || null;
+
+      if (!text && !photo) return;
+      
       openDays.add(date);
-      await addDoc(entriesCol, { date, text, author, createdAt: serverTimestamp() });
+      await addDoc(entriesCol, { 
+        date, 
+        text, 
+        author, 
+        photo, 
+        createdAt: serverTimestamp() 
+      });
+
       document.getElementById('entryText').value = '';
+      document.getElementById('entryPhoto').value = '';
+      document.getElementById('entryFile').value = '';
+      document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
       entryForm.classList.remove('open');
     };
 
@@ -793,7 +896,7 @@
     renderBucketList();
     tick();
     setInterval(tick, 1000);
-    recordSilentVisit(); // Sessizce IP bazlı son giriş tarihini güncelle
+    recordSilentVisit();
   }
 </script>
 </body>
