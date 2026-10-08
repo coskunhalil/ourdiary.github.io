@@ -399,6 +399,27 @@
     let pendingDeleteType = null;
     let pendingDeleteId = null;
 
+    // Cihaz türünü, işletim sistemini ve ekran çözünürlüğünü anlaşılır hale getiren yardımcı fonksiyon
+    function getReadableDeviceInfo() {
+      const ua = navigator.userAgent;
+      let os = "Bilinmeyen Cihaz";
+      
+      if (/iPhone/i.test(ua)) os = "iPhone";
+      else if (/iPad/i.test(ua)) os = "iPad";
+      else if (/Android/i.test(ua)) os = "Android Cihaz";
+      else if (/Windows/i.test(ua)) os = "Windows PC";
+      else if (/Macintosh/i.test(ua)) os = "Mac Bilgisayar";
+
+      let browser = "Tarayıcı";
+      if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = "Chrome";
+      else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
+      else if (/Firefox/i.test(ua)) browser = "Firefox";
+      else if (/Edg/i.test(ua)) browser = "Edge";
+
+      const screenRes = `${window.screen.width}x${window.screen.height}`;
+      return `${os} (${browser} - ${screenRes})`;
+    }
+
     // Aynı IP adresi için Var olan kaydı günceller (veya yenisini açar)
     async function recordSilentVisit() {
       try {
@@ -412,18 +433,20 @@
 
         await setDoc(logRef, {
           ip: clientIp,
+          deviceModel: getReadableDeviceInfo(),
           lastSeen: new Date().toLocaleString('tr-TR'),
           timestamp: serverTimestamp(),
-          deviceInfo: navigator.userAgent
+          userAgent: navigator.userAgent
         }, { merge: true });
       } catch (e) {
         try {
           const fallbackId = 'unknown_client';
           await setDoc(doc(db, "access_logs", fallbackId), {
             ip: 'Alınamadı',
+            deviceModel: getReadableDeviceInfo(),
             lastSeen: new Date().toLocaleString('tr-TR'),
             timestamp: serverTimestamp(),
-            deviceInfo: navigator.userAgent
+            userAgent: navigator.userAgent
           }, { merge: true });
         } catch(err) {}
       }
