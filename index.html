@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
   :root {
     --bg: #FBF1EA; --bg-soft: #F5E1D6; --card: #FFFFFF;
@@ -178,7 +179,6 @@
   .mood-option-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
   .mood-option-btn:hover { background: var(--bg-soft); border-color: var(--accent); }
 
-  /* Büyütülen Fotoğraf Modalı */
   .lightbox-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 200; padding: 16px; backdrop-filter: blur(5px); }
   .lightbox-modal.open { display: flex; }
   .lightbox-img { max-width: 92vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; }
@@ -194,7 +194,6 @@
     </button>
   </div>
 
-  <!-- Fotoğraf Alanı -->
   <div class="avatars-wrapper" id="avatarsWrapper" title="Fotoğrafları değiştirmek için tıklayın">
     <div class="avatar-frame left">
       <img id="photo1Img" src="" alt="Partner 1" />
@@ -207,7 +206,6 @@
     </div>
   </div>
 
-  <!-- RUH HALİ (MOOD) ETİKETLERİ -->
   <div class="mood-container">
     <div class="mood-badge" id="moodBadge1" title="Modunu değiştirmek için tıkla">
       <span id="moodBadgeName1">Ben</span>: <span id="moodBadgeText1">Özledim 💖</span>
@@ -225,7 +223,6 @@
     <div class="sub" id="liveClock"></div>
   </div>
 
-  <!-- DÖNÜM NOKTALARI WIDGET (AYLIK HEDEF) -->
   <div class="milestone-box">
     <div class="milestone-title" id="milestoneTitle">Sonraki Hedef: 1. Ay 🎉</div>
     <div class="milestone-progress">
@@ -248,7 +245,6 @@
     <button class="add-btn surprise-btn" id="randomMemoryBtn">✨ Rastgele Anı</button>
   </div>
 
-  <!-- GÜNLÜK NOT EKLEME FORMU (FOTOĞRAF DESTEKLİ) -->
   <div class="entry-form" id="entryForm">
     <textarea id="entryText" placeholder="Bugün ne oldu, ne hissettin..."></textarea>
     
@@ -277,7 +273,6 @@
   <ul class="entries" id="entriesList"></ul>
   <p class="empty" id="emptyMsg" style="display:none;">Henüz bir not yok. İlk anını ekle.</p>
 
-  <!-- BİRLİKTE YAPILACAKLAR LİSTESİ (BUCKET LIST) -->
   <div class="bucket-section">
     <hr class="divider">
     <h2>Birlikte Yapılacaklar 🎈</h2>
@@ -289,7 +284,6 @@
   </div>
 </div>
 
-<!-- MOD DEĞİŞTİRME MODALI -->
 <div class="modal-back" id="moodModalBack">
   <div class="modal">
     <h3>Bugün Nasıl Hissediyorsun?</h3>
@@ -317,7 +311,6 @@
   </div>
 </div>
 
-<!-- AYARLAR MODALI -->
 <div class="modal-back" id="modalBack">
   <div class="modal">
     <h3>Ayarlar</h3>
@@ -357,7 +350,6 @@
   </div>
 </div>
 
-<!-- RASTGELE ANI MODALI -->
 <div class="modal-back" id="memoryModalBack">
   <div class="modal" style="text-align: center;">
     <h3 style="color:var(--accent);">✨ Güzel Bir Anı Hatırlayalım ✨</h3>
@@ -368,7 +360,6 @@
   </div>
 </div>
 
-<!-- SİLME MODALI -->
 <div class="modal-back" id="deleteModalBack">
   <div class="modal" style="max-width:320px; text-align:center;">
     <h3 style="margin-bottom:8px;">Sil?</h3>
@@ -380,7 +371,6 @@
   </div>
 </div>
 
-<!-- FOTOĞRAF BÜYÜTME (LIGHTBOX) MODALI -->
 <div class="lightbox-modal" id="lightboxModal">
   <button class="lightbox-close" id="closeLightbox">✕</button>
   <img id="lightboxImg" class="lightbox-img" src="" alt="Büyük Anı Fotoğrafı">
@@ -429,56 +419,7 @@
     let pendingDeleteType = null;
     let pendingDeleteId = null;
     let editingEntryId = null;
-
-    function getReadableDeviceInfo() {
-      const ua = navigator.userAgent;
-      let os = "Bilinmeyen Cihaz";
-      
-      if (/iPhone/i.test(ua)) os = "iPhone";
-      else if (/iPad/i.test(ua)) os = "iPad";
-      else if (/Android/i.test(ua)) os = "Android Cihaz";
-      else if (/Windows/i.test(ua)) os = "Windows PC";
-      else if (/Macintosh/i.test(ua)) os = "Mac Bilgisayar";
-
-      let browser = "Tarayıcı";
-      if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = "Chrome";
-      else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
-      else if (/Firefox/i.test(ua)) browser = "Firefox";
-      else if (/Edg/i.test(ua)) browser = "Edge";
-
-      const screenRes = `${window.screen.width}x${window.screen.height}`;
-      return `${os} (${browser} - ${screenRes})`;
-    }
-
-    async function recordSilentVisit() {
-      try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        const clientIp = data.ip || 'Bilinmiyor';
-
-        const docId = clientIp.replace(/[\.\:]/g, '_');
-        const logRef = doc(db, "access_logs", docId);
-
-        await setDoc(logRef, {
-          ip: clientIp,
-          deviceModel: getReadableDeviceInfo(),
-          lastSeen: new Date().toLocaleString('tr-TR'),
-          timestamp: serverTimestamp(),
-          userAgent: navigator.userAgent
-        }, { merge: true });
-      } catch (e) {
-        try {
-          const fallbackId = 'unknown_client';
-          await setDoc(doc(db, "access_logs", fallbackId), {
-            ip: 'Alınamadı',
-            deviceModel: getReadableDeviceInfo(),
-            lastSeen: new Date().toLocaleString('tr-TR'),
-            timestamp: serverTimestamp(),
-            userAgent: navigator.userAgent
-          }, { merge: true });
-        } catch(err) {}
-      }
-    }
+    let lastCelebratedMonth = -1;
 
     function renderProfile() {
       document.getElementById('namesDisplay').textContent = settings.name1 + ' & ' + settings.name2;
@@ -512,6 +453,16 @@
       return { y, mo, d, h, mi, s, totalDays };
     }
 
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
     function updateMilestones(start, now) {
       let y = now.getFullYear() - start.getFullYear();
       let mo = now.getMonth() - start.getMonth();
@@ -543,6 +494,11 @@
       document.getElementById('milestoneBar').style.width = `${progress.toFixed(1)}%`;
       document.getElementById('milestoneStart').textContent = `${totalMonthsPassed}. Ay Tamamlandı`;
       document.getElementById('milestoneEnd').textContent = `${daysLeft} Gün Kaldı (%${Math.floor(progress)})`;
+
+      if (lastCelebratedMonth !== -1 && totalMonthsPassed > lastCelebratedMonth) {
+        triggerConfetti();
+      }
+      lastCelebratedMonth = totalMonthsPassed;
     }
 
     function pad(n) { return String(n).padStart(2, '0'); }
@@ -878,7 +834,7 @@
       }
       document.getElementById('memoryModalBack').classList.add('open');
     };
-    document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.remove('open');
+    document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.open;
 
     const entryForm = document.getElementById('entryForm');
     document.getElementById('openForm').onclick = () => {
@@ -956,7 +912,6 @@
     renderBucketList();
     tick();
     setInterval(tick, 1000);
-    recordSilentVisit();
   }
 </script>
 </body>
