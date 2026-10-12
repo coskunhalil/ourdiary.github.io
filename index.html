@@ -184,6 +184,49 @@
   .lightbox-img { max-width: 92vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; }
   .lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; }
 
+  /* ORTAK ÇİZİM TUVALİ STİLLERİ */
+  .canvas-section { margin-top: 24px; }
+  .canvas-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+  }
+  canvas#sharedCanvas {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    touch-action: none;
+    cursor: crosshair;
+    width: 100%;
+    max-width: 100%;
+    height: 320px;
+    display: block;
+  }
+  .canvas-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .color-picker-group { display: flex; gap: 6px; align-items: center; }
+  .color-dot {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.2s;
+  }
+  .color-dot.active { transform: scale(1.2); border-color: var(--text); }
+  .brush-size-group { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-soft); }
+  .clear-canvas-btn {
+    background: none; border: 1px solid var(--border); color: #e25555; padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .clear-canvas-btn:hover { background: #e25555; color: #fff; }
+
   .setup-warning { max-width: 440px; margin: 60px auto; padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; text-align: center; font-family: 'Karla', sans-serif; line-height: 1.6; }
 </style>
 </head>
@@ -288,6 +331,30 @@
       <button id="addBucketBtn">Ekle</button>
     </div>
     <ul class="bucket-list" id="bucketList"></ul>
+  </div>
+
+  <!-- ORTAK ÇİZİM TUVALİ (CANVAS) -->
+  <div class="canvas-section">
+    <hr class="divider">
+    <h2>Ortak Resim Tuvalimiz 🎨</h2>
+    <p style="font-size:0.85rem; color:var(--text-soft); margin-top:-8px; margin-bottom:12px;">İkiniz de aynı anda buraya çizebilirsiniz!</p>
+    <div class="canvas-container">
+      <canvas id="sharedCanvas"></canvas>
+      <div class="canvas-controls">
+        <div class="color-picker-group">
+          <div class="color-dot active" style="background: #3A2432;" data-color="#3A2432"></div>
+          <div class="color-dot" style="background: #e25555;" data-color="#e25555"></div>
+          <div class="color-dot" style="background: #C4823A;" data-color="#C4823A"></div>
+          <div class="color-dot" style="background: #4A90E2;" data-color="#4A90E2"></div>
+          <div class="color-dot" style="background: #2ECC71;" data-color="#2ECC71"></div>
+        </div>
+        <div class="brush-size-group">
+          <span>Kalem:</span>
+          <input type="range" id="brushSize" min="2" max="18" value="4" style="width:70px; accent-color:var(--accent);">
+        </div>
+        <button class="clear-canvas-btn" id="clearCanvasBtn">Tuvali Temizle</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -413,6 +480,7 @@
     const settingsRef = doc(db, "site", "settings");
     const entriesCol = collection(db, "entries");
     const bucketCol = collection(db, "bucket");
+    const canvasCol = collection(db, "canvas_strokes");
 
     const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
     const defaultAvatar2 = "https://placehold.co/200x200/c4823a/ffffff?text=2";
@@ -959,6 +1027,126 @@
       if (!text) return;
       await addDoc(bucketCol, { text, done: false, createdAt: serverTimestamp() });
       input.value = '';
+    };
+
+    // --- ORTAK CANLI ÇİZİM TUVALİ (REALTIME CANVAS) LOGIC ---
+    const canvas = document.getElementById('sharedCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let currentColor = '#3A2432';
+    let currentSize = 4;
+    let lastX = 0;
+    let lastY = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      redrawAllStrokes();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 300);
+
+    let strokesList = [];
+
+    function drawLine(x0, y0, x1, y1, color, size) {
+      ctx.beginPath();
+      ctx.moveTo(x0 * canvas.width, y0 * canvas.height);
+      ctx.lineTo(x1 * canvas.width, y1 * canvas.height);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    function redrawAllStrokes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      strokesList.forEach(s => {
+        drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size);
+      });
+    }
+
+    onSnapshot(canvasCol, (snap) => {
+      strokesList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      redrawAllStrokes();
+    });
+
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) / rect.width,
+        y: (clientY - rect.top) / rect.height
+      };
+    }
+
+    function startDrawing(e) {
+      isDrawing = true;
+      const coords = getCanvasCoords(e);
+      lastX = coords.x;
+      lastY = coords.y;
+    }
+
+    async function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const coords = getCanvasCoords(e);
+      
+      const strokeData = {
+        x0: lastX,
+        y0: lastY,
+        x1: coords.x,
+        styleY1: coords.y,
+        x1: coords.x,
+        y1: coords.y,
+        color: currentColor,
+        size: currentSize,
+        createdAt: serverTimestamp()
+      };
+
+      // Yerel olarak hızlıca çiz
+      drawLine(lastX, lastY, coords.x, coords.y, currentColor, currentSize);
+
+      lastX = coords.x;
+      lastY = coords.y;
+
+      // Firebase'e gönder
+      await addDoc(canvasCol, strokeData);
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    // Renk Seçimi
+    document.querySelectorAll('.color-dot').forEach(dot => {
+      dot.onclick = () => {
+        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+        currentColor = dot.dataset.color;
+      };
+    });
+
+    // Kalem Boyutu
+    document.getElementById('brushSize').oninput = (e) => {
+      currentSize = e.target.value;
+    };
+
+    // Tuvali Temizleme
+    document.getElementById('clearCanvasBtn').onclick = async () => {
+      const docsToDelete = strokesList.map(s => deleteDoc(doc(db, 'canvas_strokes', s.id)));
+      await Promise.all(docsToDelete);
     };
 
     renderProfile();
