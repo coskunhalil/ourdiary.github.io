@@ -459,7 +459,8 @@
         confetti({
           particleCount: 120,
           spread: 80,
-          origin: { y: 0.6 }
+          origin: { y: 0.6 },
+          useWorker: false
         });
       }
     }
@@ -839,7 +840,7 @@
       }
       document.getElementById('memoryModalBack').classList.add('open');
     };
-    document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.open;
+    document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.remove('open');
 
     const entryForm = document.getElementById('entryForm');
     document.getElementById('openForm').onclick = () => {
