@@ -227,7 +227,26 @@
   }
   .clear-canvas-btn:hover { background: #e25555; color: #fff; }
 
-  .setup-warning { max-width: 440px; margin: 60px auto; padding: 26px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; text-align: center; font-family: 'Karla', sans-serif; line-height: 1.6; }
+  /* MOUSE / ERASER MODE BUTTON STYLES */
+  .tool-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  .tool-btn.active {
+    background: var(--accent);
+    color: var(--card);
+    border-color: var(--accent);
+  }
 </style>
 </head>
 <body>
@@ -341,18 +360,24 @@
     <div class="canvas-container">
       <canvas id="sharedCanvas"></canvas>
       <div class="canvas-controls">
-        <div class="color-picker-group">
-          <div class="color-dot active" style="background: #3A2432;" data-color="#3A2432"></div>
-          <div class="color-dot" style="background: #e25555;" data-color="#e25555"></div>
-          <div class="color-dot" style="background: #C4823A;" data-color="#C4823A"></div>
-          <div class="color-dot" style="background: #4A90E2;" data-color="#4A90E2"></div>
-          <div class="color-dot" style="background: #2ECC71;" data-color="#2ECC71"></div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="tool-btn active" id="pencilToolBtn" title="Kalem">✏️ Kalem</button>
+          <button class="tool-btn" id="eraserToolBtn" title="Silgi">🧹 Silgi</button>
+          
+          <div class="color-picker-group" id="colorPickerGroup">
+            <div class="color-dot active" style="background: #3A2432;" data-color="#3A2432"></div>
+            <div class="color-dot" style="background: #e25555;" data-color="#e25555"></div>
+            <div class="color-dot" style="background: #C4823A;" data-color="#C4823A"></div>
+            <div class="color-dot" style="background: #4A90E2;" data-color="#4A90E2"></div>
+            <div class="color-dot" style="background: #2ECC71;" data-color="#2ECC71"></div>
+          </div>
         </div>
+
         <div class="brush-size-group">
-          <span>Kalem:</span>
-          <input type="range" id="brushSize" min="2" max="18" value="4" style="width:70px; accent-color:var(--accent);">
+          <span id="brushSizeLabel">Boyut:</span>
+          <input type="range" id="brushSize" min="2" max="30" value="4" style="width:70px; accent-color:var(--accent);">
         </div>
-        <button class="clear-canvas-btn" id="clearCanvasBtn">Tuvali Temizle</button>
+        <button class="clear-canvas-btn" id="clearCanvasBtn">Tümünü Temizle</button>
       </div>
     </div>
   </div>
@@ -1035,6 +1060,7 @@
     let isDrawing = false;
     let currentColor = '#3A2432';
     let currentSize = 4;
+    let currentTool = 'pencil'; // 'pencil' veya 'eraser'
     let lastX = 0;
     let lastY = 0;
 
@@ -1049,21 +1075,30 @@
 
     let strokesList = [];
 
-    function drawLine(x0, y0, x1, y1, color, size) {
+    function drawLine(x0, y0, x1, y1, color, size, isEraser) {
       ctx.beginPath();
       ctx.moveTo(x0 * canvas.width, y0 * canvas.height);
       ctx.lineTo(x1 * canvas.width, y1 * canvas.height);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
+
+      if (isEraser) {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = size * 2; // Silginin biraz daha rahat silmesi için boyutu artırıyoruz
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = size;
+      }
+      
       ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over'; // Varsayılana sıfırla
     }
 
     function redrawAllStrokes() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       strokesList.forEach(s => {
-        drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size);
+        drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size, s.isEraser);
       });
     }
 
@@ -1093,21 +1128,21 @@
       if (!isDrawing) return;
       e.preventDefault();
       const coords = getCanvasCoords(e);
+      const isEraser = currentTool === 'eraser';
       
       const strokeData = {
         x0: lastX,
         y0: lastY,
         x1: coords.x,
-        styleY1: coords.y,
-        x1: coords.x,
         y1: coords.y,
-        color: currentColor,
+        color: isEraser ? '#ffffff' : currentColor,
         size: currentSize,
+        isEraser: isEraser,
         createdAt: serverTimestamp()
       };
 
       // Yerel olarak hızlıca çiz
-      drawLine(lastX, lastY, coords.x, coords.y, currentColor, currentSize);
+      drawLine(lastX, lastY, coords.x, coords.y, currentColor, currentSize, isEraser);
 
       lastX = coords.x;
       lastY = coords.y;
@@ -1129,6 +1164,29 @@
     canvas.addEventListener('touchmove', draw, { passive: false });
     canvas.addEventListener('touchend', stopDrawing);
 
+    // Araç Değişimi (Kalem vs Silgi)
+    const pencilBtn = document.getElementById('pencilToolBtn');
+    const eraserBtn = document.getElementById('eraserToolBtn');
+    const colorPickerGroup = document.getElementById('colorPickerGroup');
+
+    pencilBtn.onclick = () => {
+      currentTool = 'pencil';
+      pencilBtn.classList.add('active');
+      eraserBtn.classList.remove('active');
+      colorPickerGroup.style.opacity = '1';
+      colorPickerGroup.style.pointerEvents = 'auto';
+      canvas.style.cursor = 'crosshair';
+    };
+
+    eraserBtn.onclick = () => {
+      currentTool = 'eraser';
+      eraserBtn.classList.add('active');
+      pencilBtn.classList.remove('active');
+      colorPickerGroup.style.opacity = '0.4';
+      colorPickerGroup.style.pointerEvents = 'none';
+      canvas.style.cursor = 'cell';
+    };
+
     // Renk Seçimi
     document.querySelectorAll('.color-dot').forEach(dot => {
       dot.onclick = () => {
@@ -1138,7 +1196,7 @@
       };
     });
 
-    // Kalem Boyutu
+    // Kalem / Silgi Boyutu
     document.getElementById('brushSize').oninput = (e) => {
       currentSize = e.target.value;
     };
