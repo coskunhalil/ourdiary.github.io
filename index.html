@@ -419,7 +419,8 @@
     let pendingDeleteType = null;
     let pendingDeleteId = null;
     let editingEntryId = null;
-    let lastCelebratedMonth = -1;
+    let storedCelebrated = parseInt(localStorage.getItem('lastCelebratedMonth') || '-999', 10);
+    let lastCelebratedMonth = storedCelebrated;
 
     function renderProfile() {
       document.getElementById('namesDisplay').textContent = settings.name1 + ' & ' + settings.name2;
@@ -495,10 +496,14 @@
       document.getElementById('milestoneStart').textContent = `${totalMonthsPassed}. Ay Tamamlandı`;
       document.getElementById('milestoneEnd').textContent = `${daysLeft} Gün Kaldı (%${Math.floor(progress)})`;
 
-      if (lastCelebratedMonth !== -1 && totalMonthsPassed > lastCelebratedMonth) {
+      if (lastCelebratedMonth === -999) {
+        lastCelebratedMonth = totalMonthsPassed;
+        localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
+      } else if (totalMonthsPassed > lastCelebratedMonth) {
         triggerConfetti();
+        lastCelebratedMonth = totalMonthsPassed;
+        localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
       }
-      lastCelebratedMonth = totalMonthsPassed;
     }
 
     function pad(n) { return String(n).padStart(2, '0'); }
