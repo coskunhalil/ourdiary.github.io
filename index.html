@@ -143,7 +143,9 @@
   .entry p { margin: 0; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
   .entry-photo-thumb { margin-top: 10px; max-width: 100%; max-height: 240px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s; }
   .entry-photo-thumb:hover { transform: scale(1.02); }
-  .entry .del { background: none; border: none; color: var(--text-soft); font-size: 0.78rem; cursor: pointer; padding: 4px 0; margin-top: 6px; transition: color 0.2s; display: block; }
+  .entry-actions { display: flex; gap: 12px; margin-top: 6px; }
+  .entry .del, .entry .edit-btn { background: none; border: none; color: var(--text-soft); font-size: 0.78rem; cursor: pointer; padding: 4px 0; transition: color 0.2s; }
+  .entry .edit-btn:hover { color: var(--accent); }
   .entry .del:hover { color: #e25555; }
   .empty { color: var(--text-soft); font-size: 0.92rem; }
 
@@ -428,6 +430,7 @@
     let bucketList = [];
     let pendingDeleteType = null;
     let pendingDeleteId = null;
+    let editingEntryId = null;
 
     function getReadableDeviceInfo() {
       const ua = navigator.userAgent;
@@ -595,6 +598,8 @@
         entries.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
         const body = document.createElement('div');
         body.className = 'day-entries';
+        const nowMs = Date.now();
+
         for (const item of entries) {
           const box = document.createElement('div');
           box.className = 'entry';
@@ -619,6 +624,21 @@
             box.appendChild(img);
           }
 
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'entry-actions';
+
+          // 5 Dakika İçinde Düzenleme Kontrolü
+          const createdMs = item.createdAt ? item.createdAt.seconds * 1000 : nowMs;
+          const isEditable = (nowMs - createdMs) <= 5 * 60 * 1000;
+
+          if (isEditable) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            editBtn.textContent = 'Düzenle';
+            editBtn.onclick = () => openEditForm(item);
+            actionsDiv.appendChild(editBtn);
+          }
+
           const del = document.createElement('button');
           del.className = 'del'; 
           del.textContent = 'Sil';
@@ -627,14 +647,43 @@
             pendingDeleteId = item.id;
             document.getElementById('deleteModalBack').classList.add('open');
           };
-          box.appendChild(del);
+          actionsDiv.appendChild(del);
 
+          box.appendChild(actionsDiv);
           body.appendChild(box);
         }
         det.appendChild(body);
         dayLi.appendChild(det);
         list.appendChild(dayLi);
       }
+    }
+
+    function openEditForm(item) {
+      editingEntryId = item.id;
+      document.getElementById('entryText').value = item.text || '';
+      document.getElementById('entryDate').value = item.date || new Date().toISOString().slice(0,10);
+      document.getElementById('entryTime').value = item.time || '';
+      
+      const sel = document.getElementById('entryAuthor');
+      sel.innerHTML = '';
+      [settings.name1, settings.name2].forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        if (item.author === n) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      if (item.photo) {
+        document.getElementById('entryPhoto').value = item.photo;
+        document.getElementById('entryPhotoPreview').src = item.photo;
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'inline-block';
+      } else {
+        document.getElementById('entryPhoto').value = '';
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+      }
+
+      entryForm.classList.add('open');
+      document.getElementById('entryText').focus();
     }
 
     function renderBucketList() {
@@ -842,6 +891,7 @@
     // Günlük Formu İşlemleri
     const entryForm = document.getElementById('entryForm');
     document.getElementById('openForm').onclick = () => {
+      editingEntryId = null;
       const now = new Date();
       document.getElementById('entryDate').value = now.toISOString().slice(0,10);
       document.getElementById('entryTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
@@ -852,6 +902,7 @@
         opt.value = n; opt.textContent = n;
         sel.appendChild(opt);
       });
+      document.getElementById('entryText').value = '';
       document.getElementById('entryPhoto').value = '';
       document.getElementById('entryFile').value = '';
       document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
@@ -859,7 +910,10 @@
       document.getElementById('entryText').focus();
     };
     
-    document.getElementById('cancelEntry').onclick = () => entryForm.classList.remove('open');
+    document.getElementById('cancelEntry').onclick = () => {
+      editingEntryId = null;
+      entryForm.classList.remove('open');
+    };
     
     document.getElementById('saveEntry').onclick = async () => {
       const text = document.getElementById('entryText').value.trim();
@@ -871,14 +925,25 @@
       if (!text && !photo) return;
       
       openDays.add(date);
-      await addDoc(entriesCol, { 
-        date, 
-        time,
-        text, 
-        author, 
-        photo, 
-        createdAt: serverTimestamp() 
-      });
+      if (editingEntryId) {
+        await updateDoc(doc(db, 'entries', editingEntryId), {
+          date,
+          time,
+          text,
+          author,
+          photo
+        });
+        editingEntryId = null;
+      } else {
+        await addDoc(entriesCol, { 
+          date, 
+          time,
+          text, 
+          author, 
+          photo, 
+          createdAt: serverTimestamp() 
+        });
+      }
 
       document.getElementById('entryText').value = '';
       document.getElementById('entryPhoto').value = '';
