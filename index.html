@@ -1236,7 +1236,168 @@
     renderBucketList();
     tick();
     setInterval(tick, 1000);
-    recordSilentVisit();
+    silentVisit();
+
+    // --- ORTAK CANLI ÇİZİM TUVALİ (YENİLENMİŞ AKICI MİMARİ) ---
+    const canvas = document.getElementById('sharedCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let currentColor = '#3A2432';
+    let currentSize = 4;
+    let currentTool = 'pencil'; 
+    let lastX = 0;
+    let lastY = 0;
+    let currentPath = [];
+    let strokesList = [];
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width && rect.height) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        redrawAllStrokes();
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 300);
+
+    function redrawAllStrokes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const sortedStrokes = [...strokesList].sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
+      sortedStrokes.forEach(stroke => {
+        if (!stroke.points || stroke.points.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x * canvas.width, stroke.points[0].y * canvas.height);
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x * canvas.width, stroke.points[i].y * canvas.height);
+        }
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.size;
+        ctx.stroke();
+      });
+    }
+
+    onSnapshot(canvasCol, (snap) => {
+      strokesList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      redrawAllStrokes();
+    });
+
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      return {
+        x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+        y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+      };
+    }
+
+    function startDrawing(e) {
+      isDrawing = true;
+      const coords = getCanvasCoords(e);
+      currentPath = [coords];
+      lastX = coords.x;
+      lastY = coords.y;
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      if (e.cancelable) e.preventDefault();
+      
+      const coords = getCanvasCoords(e);
+      currentPath.push(coords);
+
+      // Anında yerel akıcı çizim
+      ctx.beginPath();
+      ctx.moveTo(lastX * canvas.width, lastY * canvas.height);
+      ctx.lineTo(coords.x * canvas.width, coords.y * canvas.height);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+      ctx.lineWidth = currentTool === 'eraser' ? Number(currentSize) * 3.5 : Number(currentSize);
+      ctx.stroke();
+
+      lastX = coords.x;
+      lastY = coords.y;
+    }
+
+    async function stopDrawing() {
+      if (!isDrawing) return;
+      isDrawing = false;
+      
+      if (currentPath.length > 1) {
+        const strokeData = {
+          color: currentTool === 'eraser' ? '#ffffff' : currentColor,
+          size: currentTool === 'eraser' ? Number(currentSize) * 3.5 : Number(currentSize),
+          points: currentPath,
+          createdAt: serverTimestamp()
+        };
+        try {
+          await addDoc(canvasCol, strokeData);
+        } catch (err) {
+          console.error("Çizim kaydedilemedi:", err);
+        }
+      }
+      currentPath = [];
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    const pencilBtn = document.getElementById('pencilToolBtn');
+    const eraserBtn = document.getElementById('eraserToolBtn');
+    const colorPickerGroup = document.getElementById('colorPickerGroup');
+
+    pencilBtn.onclick = () => {
+      currentTool = 'pencil';
+      pencilBtn.classList.add('active');
+      eraserBtn.classList.remove('active');
+      colorPickerGroup.style.opacity = '1';
+      colorPickerGroup.style.pointerEvents = 'auto';
+      canvas.style.cursor = 'crosshair';
+    };
+
+    eraserBtn.onclick = () => {
+      currentTool = 'eraser';
+      eraserBtn.classList.add('active');
+      pencilBtn.classList.remove('active');
+      colorPickerGroup.style.opacity = '0.3';
+      colorPickerGroup.style.pointerEvents = 'none';
+      canvas.style.cursor = 'cell';
+    };
+
+    document.querySelectorAll('.color-dot').forEach(dot => {
+      dot.onclick = () => {
+        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+        currentColor = dot.dataset.color;
+      };
+    });
+
+    document.getElementById('brushSize').oninput = (e) => {
+      currentSize = e.target.value;
+    };
+
+    document.getElementById('clearCanvasBtn').onclick = async () => {
+      const docsToDelete = strokesList.map(s => deleteDoc(doc(db, 'canvas_strokes', s.id)));
+      await Promise.all(docsToDelete);
+    };
   }
 </script>
 </body>
