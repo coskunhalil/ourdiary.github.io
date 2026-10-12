@@ -268,6 +268,7 @@
     <div class="row">
       <select id="entryAuthor" aria-label="Kim yazıyor"></select>
       <input type="date" id="entryDate">
+      <input type="time" id="entryTime" style="padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: 'Karla', sans-serif;">
       <button class="save" id="saveEntry">Kaydet</button>
       <button class="cancel" id="cancelEntry">Vazgeç</button>
     </div>
@@ -600,12 +601,12 @@
           
           const who = document.createElement('div');
           who.className = 'date';
-          who.textContent = item.author || '';
+          who.textContent = (item.author || '') + (item.time ? ' • ' + item.time : '');
           
           const p = document.createElement('p');
           p.textContent = item.text || '';
           
-          if (item.author) box.appendChild(who);
+          if (item.author || item.time) box.appendChild(who);
           box.appendChild(p);
 
           // Anı Fotoğrafı Varsa Göster
@@ -841,7 +842,9 @@
     // Günlük Formu İşlemleri
     const entryForm = document.getElementById('entryForm');
     document.getElementById('openForm').onclick = () => {
-      document.getElementById('entryDate').value = new Date().toISOString().slice(0,10);
+      const now = new Date();
+      document.getElementById('entryDate').value = now.toISOString().slice(0,10);
+      document.getElementById('entryTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
       const sel = document.getElementById('entryAuthor');
       sel.innerHTML = '';
       [settings.name1, settings.name2].forEach(n => {
@@ -861,6 +864,7 @@
     document.getElementById('saveEntry').onclick = async () => {
       const text = document.getElementById('entryText').value.trim();
       const date = document.getElementById('entryDate').value || new Date().toISOString().slice(0,10);
+      const time = document.getElementById('entryTime').value || (pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()));
       const author = document.getElementById('entryAuthor').value || settings.name1;
       const photo = document.getElementById('entryPhoto').value.trim() || null;
 
@@ -869,6 +873,7 @@
       openDays.add(date);
       await addDoc(entriesCol, { 
         date, 
+        time,
         text, 
         author, 
         photo, 
