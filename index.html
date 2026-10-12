@@ -183,70 +183,6 @@
   .lightbox-modal.open { display: flex; }
   .lightbox-img { max-width: 92vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; }
   .lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; }
-
-  /* ORTAK ÇİZİM TUVALİ STİLLERİ */
-  .canvas-section { margin-top: 24px; }
-  .canvas-container {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.02);
-  }
-  canvas#sharedCanvas {
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    touch-action: none;
-    cursor: crosshair;
-    width: 100%;
-    max-width: 100%;
-    height: 320px;
-    display: block;
-  }
-  .canvas-controls {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .color-picker-group { display: flex; gap: 6px; align-items: center; transition: opacity 0.2s; }
-  .color-dot {
-    width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.2s;
-  }
-  .color-dot.active { transform: scale(1.2); border-color: var(--text); }
-  .brush-size-group { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-soft); }
-  .clear-canvas-btn {
-    background: none; border: 1px solid var(--border); color: #e25555; padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
-  }
-  .clear-canvas-btn:hover { background: #e25555; color: #fff; }
-
-  /* MOUSE / ERASER MODE BUTTON STYLES */
-  .tool-btn {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 5px 10px;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s;
-  }
-  .tool-btn.active {
-    background: var(--accent);
-    color: var(--card);
-    border-color: var(--accent);
-  }
 </style>
 </head>
 <body>
@@ -323,7 +259,7 @@
         <button type="button" class="btn-upload" onclick="document.getElementById('entryFile').click()">Fotoğraf Seç</button>
         <input type="file" id="entryFile" accept="image/*" style="display:none">
       </div>
-      <div id="entryPhotoPreviewContainer" style="display:none; margin-top:10px; position:relative; inline-block;">
+      <div id="entryPhotoPreviewContainer" style="display:none; margin-top:10px; position:relative;">
         <img id="entryPhotoPreview" src="" style="max-height:120px; border-radius:8px; border:1px solid var(--border); object-fit:cover;">
         <button type="button" id="removeEntryPhoto" style="background:#e25555; color:white; border:none; border-radius:50%; width:22px; height:22px; cursor:pointer; font-size:12px; margin-left:6px; vertical-align:top;">✕</button>
       </div>
@@ -350,43 +286,6 @@
       <button id="addBucketBtn">Ekle</button>
     </div>
     <ul class="bucket-list" id="bucketList"></ul>
-  </div>
-
-  <!-- ORTAK ÇİZİM TUVALİ (CANVAS) -->
-  <div class="canvas-section">
-    <hr class="divider">
-    <h2>Ortak Resim Tuvalimiz 🎨</h2>
-    <p style="font-size:0.85rem; color:var(--text-soft); margin-top:-8px; margin-bottom:12px;">İkiniz de aynı anda buraya çizebilirsiniz!</p>
-    <div class="canvas-container">
-      <canvas id="sharedCanvas"></canvas>
-      <div class="canvas-controls">
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <button class="tool-btn active" id="pencilToolBtn" title="Kalem">✏️ Kalem</button>
-          <button class="tool-btn" id="eraserToolBtn" title="Silgi">🧹 Silgi</button>
-          
-          <div class="color-picker-group" id="colorPickerGroup" style="flex-wrap: wrap;">
-            <div class="color-dot active" style="background: #3A2432;" data-color="#3A2432" title="Koyu Kırmızı/Siyah"></div>
-            <div class="color-dot" style="background: #e25555;" data-color="#e25555" title="Kırmızı"></div>
-            <div class="color-dot" style="background: #ff75a0;" data-color="#ff75a0" title="Pembe"></div>
-            <div class="color-dot" style="background: #9b59b6;" data-color="#9b59b6" title="Mor"></div>
-            <div class="color-dot" style="background: #C4823A;" data-color="#C4823A" title="Taba / Altın"></div>
-            <div class="color-dot" style="background: #f39c12;" data-color="#f39c12" title="Turuncu"></div>
-            <div class="color-dot" style="background: #f1c40f;" data-color="#f1c40f" title="Sarı"></div>
-            <div class="color-dot" style="background: #2ECC71;" data-color="#2ECC71" title="Yeşil"></div>
-            <div class="color-dot" style="background: #1abc9c;" data-color="#1abc9c" title="Turkuaz"></div>
-            <div class="color-dot" style="background: #4A90E2;" data-color="#4A90E2" title="Mavi"></div>
-            <div class="color-dot" style="background: #34495e;" data-color="#34495e" title="Lacivert"></div>
-            <div class="color-dot" style="background: #7f8c8d;" data-color="#7f8c8d" title="Gri"></div>
-          </div>
-        </div>
-
-        <div class="brush-size-group">
-          <span id="brushSizeLabel">Boyut:</span>
-          <input type="range" id="brushSize" min="2" max="30" value="4" style="width:70px; accent-color:var(--accent);">
-        </div>
-        <button class="clear-canvas-btn" id="clearCanvasBtn">Tümünü Temizle</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -512,7 +411,6 @@
     const settingsRef = doc(db, "site", "settings");
     const entriesCol = collection(db, "entries");
     const bucketCol = collection(db, "bucket");
-    const canvasCol = collection(db, "canvas_strokes");
 
     const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
     const defaultAvatar2 = "https://placehold.co/200x200/c4823a/ffffff?text=2";
@@ -714,7 +612,6 @@
           if (item.author || item.time) box.appendChild(who);
           box.appendChild(p);
 
-          // Anı Fotoğrafı Varsa Göster
           if (item.photo) {
             const img = document.createElement('img');
             img.src = item.photo;
@@ -727,7 +624,6 @@
           const actionsDiv = document.createElement('div');
           actionsDiv.className = 'entry-actions';
 
-          // 5 Dakika İçinde Düzenleme Kontrolü
           const createdMs = item.createdAt ? item.createdAt.seconds * 1000 : nowMs;
           const isEditable = (nowMs - createdMs) <= 5 * 60 * 1000;
 
@@ -776,7 +672,7 @@
       if (item.photo) {
         document.getElementById('entryPhoto').value = item.photo;
         document.getElementById('entryPhotoPreview').src = item.photo;
-        document.getElementById('entryPhotoPreviewContainer').style.display = 'inline-block';
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
       } else {
         document.getElementById('entryPhoto').value = '';
         document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
@@ -822,7 +718,6 @@
       });
     }
 
-    // Lightbox Fotoğraf Büyütme İşlemleri
     function openLightbox(url) {
       document.getElementById('lightboxImg').src = url;
       document.getElementById('lightboxModal').classList.add('open');
@@ -891,12 +786,11 @@
       document.getElementById('photo2').value = data;
     }, 300));
 
-    // Günlük Notu Fotoğraf Seçimi
     document.getElementById('entryFile').addEventListener('change', (e) => {
       processImageFile(e.target.files[0], (data) => {
         document.getElementById('entryPhoto').value = data;
         document.getElementById('entryPhotoPreview').src = data;
-        document.getElementById('entryPhotoPreviewContainer').style.display = 'inline-block';
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
       }, 700);
     });
 
@@ -904,7 +798,7 @@
       const url = e.target.value.trim();
       if (url) {
         document.getElementById('entryPhotoPreview').src = url;
-        document.getElementById('entryPhotoPreviewContainer').style.display = 'inline-block';
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
       } else {
         document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
       }
@@ -939,7 +833,6 @@
       document.getElementById('modalBack').classList.remove('open');
     };
 
-    // MOD SEÇİMİ İŞLEMLERİ
     const moodModalBack = document.getElementById('moodModalBack');
     const openMoodModal = () => {
       const sel = document.getElementById('moodAuthorSelect');
@@ -971,7 +864,6 @@
       if (text) updateMoodInFirebase(text);
     };
 
-    // Rastgele Anı Modal Etkileşimi
     document.getElementById('randomMemoryBtn').onclick = () => {
       if (!diary.length) {
         document.getElementById('randomMemoryContent').textContent = "Henüz kayıtlı bir anınız yok! Önce aşağıdan yeni bir anı ekleyin.";
@@ -988,7 +880,6 @@
     };
     document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.remove('open');
 
-    // Günlük Formu İşlemleri
     const entryForm = document.getElementById('entryForm');
     document.getElementById('openForm').onclick = () => {
       editingEntryId = null;
@@ -1052,7 +943,6 @@
       entryForm.classList.remove('open');
     };
 
-    // Bucket List Ekleme
     document.getElementById('addBucketBtn').onclick = async () => {
       const input = document.getElementById('bucketInput');
       const text = input.value.trim();
@@ -1061,343 +951,12 @@
       input.value = '';
     };
 
-    // --- ORTAK CANLI ÇİZİM TUVALİ (REALTIME CANVAS) LOGIC ---
-    const canvas = document.getElementById('sharedCanvas');
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false;
-    let currentColor = '#3A2432';
-    let currentSize = 4;
-    let currentTool = 'pencil'; // 'pencil' veya 'eraser'
-    let lastX = 0;
-    let lastY = 0;
-
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width && rect.height) {
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        redrawAllStrokes();
-      }
-    }
-    window.addEventListener('resize', resizeCanvas);
-    setTimeout(resizeCanvas, 300);
-
-    let strokesList = [];
-
-    function drawLine(x0, y0, x1, y1, color, size, isEraser) {
-      ctx.beginPath();
-      ctx.moveTo(x0 * canvas.width, y0 * canvas.height);
-      ctx.lineTo(x1 * canvas.width, y1 * canvas.height);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      if (isEraser) {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineWidth = size * 2.5; // Silme kolaylığı için kalınlık artırıldı
-      } else {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = color;
-        ctx.lineWidth = size;
-      }
-      
-      ctx.stroke();
-      ctx.globalCompositeOperation = 'source-over'; // Varsayılan çizim moduna dön
-    }
-
-    function redrawAllStrokes() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Çizimleri oluşturulma tarihine göre sıralayarak baştan çiz
-      const sortedStrokes = [...strokesList].sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
-      sortedStrokes.forEach(s => {
-        drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size, s.isEraser);
-      });
-    }
-
-    onSnapshot(canvasCol, (snap) => {
-      strokesList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      redrawAllStrokes();
-    });
-
-    function getCanvasCoords(e) {
-      const rect = canvas.getBoundingClientRect();
-      let clientX, clientY;
-      
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      }
-
-      return {
-        x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
-        y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
-      };
-    }
-
-    function startDrawing(e) {
-      isDrawing = true;
-      const coords = getCanvasCoords(e);
-      lastX = coords.x;
-      lastY = coords.y;
-    }
-
-    async function draw(e) {
-      if (!isDrawing) return;
-      if (e.cancelable) e.preventDefault(); // Sayfanın kaymasını engelle
-      
-      const coords = getCanvasCoords(e);
-      const isEraser = currentTool === 'eraser';
-      
-      const strokeData = {
-        x0: lastX,
-        y0: lastY,
-        x1: coords.x,
-        y1: coords.y,
-        color: isEraser ? '#ffffff' : currentColor,
-        size: Number(currentSize),
-        isEraser: isEraser,
-        createdAt: serverTimestamp()
-      };
-
-      // Yerel ekranda anında çiz/sil
-      drawLine(lastX, lastY, coords.x, coords.y, currentColor, currentSize, isEraser);
-
-      lastX = coords.x;
-      lastY = coords.y;
-
-      // Firebase'e kaydet
-      try {
-        await addDoc(canvasCol, strokeData);
-      } catch (err) {
-        console.error("Çizim kaydedilemedi:", err);
-      }
-    }
-
-    function stopDrawing() {
-      isDrawing = false;
-    }
-
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseleave', stopDrawing);
-
-    canvas.addEventListener('touchstart', startDrawing, { passive: false });
-    canvas.addEventListener('touchmove', draw, { passive: false });
-    canvas.addEventListener('touchend', stopDrawing);
-
-    // Araç Değişimi (Kalem vs Silgi)
-    const pencilBtn = document.getElementById('pencilToolBtn');
-    const eraserBtn = document.getElementById('eraserToolBtn');
-    const colorPickerGroup = document.getElementById('colorPickerGroup');
-
-    pencilBtn.onclick = () => {
-      currentTool = 'pencil';
-      pencilBtn.classList.add('active');
-      eraserBtn.classList.remove('active');
-      colorPickerGroup.style.opacity = '1';
-      colorPickerGroup.style.pointerEvents = 'auto';
-      canvas.style.cursor = 'crosshair';
-    };
-
-    eraserBtn.onclick = () => {
-      currentTool = 'eraser';
-      eraserBtn.classList.add('active');
-      pencilBtn.classList.remove('active');
-      colorPickerGroup.style.opacity = '0.3';
-      colorPickerGroup.style.pointerEvents = 'none';
-      canvas.style.cursor = 'cell';
-    };
-
-    // Renk Seçimi
-    document.querySelectorAll('.color-dot').forEach(dot => {
-      dot.onclick = () => {
-        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-        dot.classList.add('active');
-        currentColor = dot.dataset.color;
-      };
-    });
-
-    // Kalem / Silgi Boyutu
-    document.getElementById('brushSize').oninput = (e) => {
-      currentSize = e.target.value;
-    };
-
-    // Tuvali Temizleme
-    document.getElementById('clearCanvasBtn').onclick = async () => {
-      const docsToDelete = strokesList.map(s => deleteDoc(doc(db, 'canvas_strokes', s.id)));
-      await Promise.all(docsToDelete);
-    };
-
     renderProfile();
     renderDiary();
     renderBucketList();
     tick();
     setInterval(tick, 1000);
-    silentVisit();
-
-    // --- ORTAK CANLI ÇİZİM TUVALİ (YENİLENMİŞ AKICI MİMARİ) ---
-    const canvas = document.getElementById('sharedCanvas');
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false;
-    let currentColor = '#3A2432';
-    let currentSize = 4;
-    let currentTool = 'pencil'; 
-    let lastX = 0;
-    let lastY = 0;
-    let currentPath = [];
-    let strokesList = [];
-
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width && rect.height) {
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        redrawAllStrokes();
-      }
-    }
-    window.addEventListener('resize', resizeCanvas);
-    setTimeout(resizeCanvas, 300);
-
-    function redrawAllStrokes() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const sortedStrokes = [...strokesList].sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
-      sortedStrokes.forEach(stroke => {
-        if (!stroke.points || stroke.points.length < 2) return;
-        ctx.beginPath();
-        ctx.moveTo(stroke.points[0].x * canvas.width, stroke.points[0].y * canvas.height);
-        for (let i = 1; i < stroke.points.length; i++) {
-          ctx.lineTo(stroke.points[i].x * canvas.width, stroke.points[i].y * canvas.height);
-        }
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = stroke.size;
-        ctx.stroke();
-      });
-    }
-
-    onSnapshot(canvasCol, (snap) => {
-      strokesList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      redrawAllStrokes();
-    });
-
-    function getCanvasCoords(e) {
-      const rect = canvas.getBoundingClientRect();
-      let clientX, clientY;
-      
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      }
-
-      return {
-        x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
-        y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
-      };
-    }
-
-    function startDrawing(e) {
-      isDrawing = true;
-      const coords = getCanvasCoords(e);
-      currentPath = [coords];
-      lastX = coords.x;
-      lastY = coords.y;
-    }
-
-    function draw(e) {
-      if (!isDrawing) return;
-      if (e.cancelable) e.preventDefault();
-      
-      const coords = getCanvasCoords(e);
-      currentPath.push(coords);
-
-      // Anında yerel akıcı çizim
-      ctx.beginPath();
-      ctx.moveTo(lastX * canvas.width, lastY * canvas.height);
-      ctx.lineTo(coords.x * canvas.width, coords.y * canvas.height);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
-      ctx.lineWidth = currentTool === 'eraser' ? Number(currentSize) * 3.5 : Number(currentSize);
-      ctx.stroke();
-
-      lastX = coords.x;
-      lastY = coords.y;
-    }
-
-    async function stopDrawing() {
-      if (!isDrawing) return;
-      isDrawing = false;
-      
-      if (currentPath.length > 1) {
-        const strokeData = {
-          color: currentTool === 'eraser' ? '#ffffff' : currentColor,
-          size: currentTool === 'eraser' ? Number(currentSize) * 3.5 : Number(currentSize),
-          points: currentPath,
-          createdAt: serverTimestamp()
-        };
-        try {
-          await addDoc(canvasCol, strokeData);
-        } catch (err) {
-          console.error("Çizim kaydedilemedi:", err);
-        }
-      }
-      currentPath = [];
-    }
-
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseleave', stopDrawing);
-
-    canvas.addEventListener('touchstart', startDrawing, { passive: false });
-    canvas.addEventListener('touchmove', draw, { passive: false });
-    canvas.addEventListener('touchend', stopDrawing);
-
-    const pencilBtn = document.getElementById('pencilToolBtn');
-    const eraserBtn = document.getElementById('eraserToolBtn');
-    const colorPickerGroup = document.getElementById('colorPickerGroup');
-
-    pencilBtn.onclick = () => {
-      currentTool = 'pencil';
-      pencilBtn.classList.add('active');
-      eraserBtn.classList.remove('active');
-      colorPickerGroup.style.opacity = '1';
-      colorPickerGroup.style.pointerEvents = 'auto';
-      canvas.style.cursor = 'crosshair';
-    };
-
-    eraserBtn.onclick = () => {
-      currentTool = 'eraser';
-      eraserBtn.classList.add('active');
-      pencilBtn.classList.remove('active');
-      colorPickerGroup.style.opacity = '0.3';
-      colorPickerGroup.style.pointerEvents = 'none';
-      canvas.style.cursor = 'cell';
-    };
-
-    document.querySelectorAll('.color-dot').forEach(dot => {
-      dot.onclick = () => {
-        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-        dot.classList.add('active');
-        currentColor = dot.dataset.color;
-      };
-    });
-
-    document.getElementById('brushSize').oninput = (e) => {
-      currentSize = e.target.value;
-    };
-
-    document.getElementById('clearCanvasBtn').onclick = async () => {
-      const docsToDelete = strokesList.map(s => deleteDoc(doc(db, 'canvas_strokes', s.id)));
-      await Promise.all(docsToDelete);
-    };
+    recordSilentVisit();
   }
 </script>
 </body>
