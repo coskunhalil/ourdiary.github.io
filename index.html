@@ -216,7 +216,7 @@
     justify-content: space-between;
     align-items: center;
   }
-  .color-picker-group { display: flex; gap: 6px; align-items: center; }
+  .color-picker-group { display: flex; gap: 6px; align-items: center; transition: opacity 0.2s; }
   .color-dot {
     width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.2s;
   }
@@ -1066,9 +1066,11 @@
 
     function resizeCanvas() {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      redrawAllStrokes();
+      if (rect.width && rect.height) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        redrawAllStrokes();
+      }
     }
     window.addEventListener('resize', resizeCanvas);
     setTimeout(resizeCanvas, 300);
@@ -1084,7 +1086,7 @@
 
       if (isEraser) {
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineWidth = size * 2; // Silginin biraz daha rahat silmesi için boyutu artırıyoruz
+        ctx.lineWidth = size * 2.5; // Silme kolaylığı için kalınlık artırıldı
       } else {
         ctx.globalCompositeOperation = 'source-over';
         ctx.strokeStyle = color;
@@ -1092,12 +1094,14 @@
       }
       
       ctx.stroke();
-      ctx.globalCompositeOperation = 'source-over'; // Varsayılana sıfırla
+      ctx.globalCompositeOperation = 'source-over'; // Varsayılan çizim moduna dön
     }
 
     function redrawAllStrokes() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      strokesList.forEach(s => {
+      // Çizimleri oluşturulma tarihine göre sıralayarak baştan çiz
+      const sortedStrokes = [...strokesList].sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
+      sortedStrokes.forEach(s => {
         drawLine(s.x0, s.y0, s.x1, s.y1, s.color, s.size, s.isEraser);
       });
     }
@@ -1109,11 +1113,19 @@
 
     function getCanvasCoords(e) {
       const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      let clientX, clientY;
+      
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
       return {
-        x: (clientX - rect.left) / rect.width,
-        y: (clientY - rect.top) / rect.height
+        x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+        y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
       };
     }
 
@@ -1126,7 +1138,8 @@
 
     async function draw(e) {
       if (!isDrawing) return;
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault(); // Sayfanın kaymasını engelle
+      
       const coords = getCanvasCoords(e);
       const isEraser = currentTool === 'eraser';
       
@@ -1136,19 +1149,23 @@
         x1: coords.x,
         y1: coords.y,
         color: isEraser ? '#ffffff' : currentColor,
-        size: currentSize,
+        size: Number(currentSize),
         isEraser: isEraser,
         createdAt: serverTimestamp()
       };
 
-      // Yerel olarak hızlıca çiz
+      // Yerel ekranda anında çiz/sil
       drawLine(lastX, lastY, coords.x, coords.y, currentColor, currentSize, isEraser);
 
       lastX = coords.x;
       lastY = coords.y;
 
-      // Firebase'e gönder
-      await addDoc(canvasCol, strokeData);
+      // Firebase'e kaydet
+      try {
+        await addDoc(canvasCol, strokeData);
+      } catch (err) {
+        console.error("Çizim kaydedilemedi:", err);
+      }
     }
 
     function stopDrawing() {
@@ -1182,7 +1199,7 @@
       currentTool = 'eraser';
       eraserBtn.classList.add('active');
       pencilBtn.classList.remove('active');
-      colorPickerGroup.style.opacity = '0.4';
+      colorPickerGroup.style.opacity = '0.3';
       colorPickerGroup.style.pointerEvents = 'none';
       canvas.style.cursor = 'cell';
     };
