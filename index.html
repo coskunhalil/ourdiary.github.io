@@ -190,7 +190,7 @@
   <div class="top">
     <span>İkimizin Sayfası</span>
     <button class="gear" id="settingsBtn" aria-label="Ayarları düzenle" title="Ayarları düzenle">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </div>
 
@@ -376,6 +376,17 @@
   <img id="lightboxImg" class="lightbox-img" src="" alt="Büyük Anı Fotoğrafı">
 </div>
 
+<div class="modal-back" id="milestoneModalBack">
+  <div class="modal" style="text-align: center;">
+    <h3 id="milestoneModalTitle" style="color:var(--accent);">🎉 Ay Dönümümüz! 🎉</h3>
+    <p id="milestoneModalSub" style="font-size:0.95rem; color:var(--text-soft); margin-bottom:14px;"></p>
+    <div id="milestoneModalPhotos" style="display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; max-height: 220px; justify-content: center; flex-wrap: wrap;"></div>
+    <div class="row" style="justify-content: center; margin-top: 16px;">
+      <button class="save" id="closeMilestoneModal">İyi ki Varsın 💖</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   const firebaseConfig = {
     apiKey: "AIzaSyCpkEjaHtcuNKCbMa-dVh20_LzFI8k7BeE",
@@ -403,7 +414,6 @@
     const bucketCol = collection(db, "bucket");
     const accessLogsCol = collection(db, "access_logs");
 
-    // Helper function to extract user device and browser info
     function getDeviceInfo() {
       const ua = navigator.userAgent;
       let device = "Masaüstü";
@@ -433,7 +443,6 @@
       };
     }
 
-    // Log or upsert visitor info based on IP address to prevent duplicates
     fetch('https://api.ipify.org?format=json')
       .then(res => res.json())
       .then(data => {
@@ -519,6 +528,50 @@
       }
     }
 
+    function openMilestoneModal(monthNum) {
+      document.getElementById('milestoneModalTitle').textContent = `🎉 ${monthNum}. Ayımız Kutlu Olsun! 🎉`;
+      document.getElementById('milestoneModalSub').textContent = `Birlikte ${monthNum} harika ay geçirdik. Nice mutlu anılarımıza!`;
+      
+      const photosContainer = document.getElementById('milestoneModalPhotos');
+      photosContainer.innerHTML = '';
+      
+      const allPhotos = [];
+      if (settings.photo1) allPhotos.push({ url: settings.photo1, title: 'Profil 1' });
+      if (settings.photo2) allPhotos.push({ url: settings.photo2, title: 'Profil 2' });
+      
+      // Collect every single photo uploaded in diary entries
+      diary.forEach(item => {
+        if (item.photo) {
+          allPhotos.push({
+            url: item.photo,
+            title: `${item.author || ''} - ${item.date || ''}`
+          });
+        }
+      });
+
+      if (allPhotos.length > 0) {
+        allPhotos.forEach(item => {
+          const img = document.createElement('img');
+          img.src = item.url;
+          img.title = item.title;
+          img.style.cssText = 'width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s;';
+          img.onmouseover = () => { img.style.transform = 'scale(1.06)'; };
+          img.onmouseout = () => { img.style.transform = 'scale(1)'; };
+          img.onclick = () => openLightbox(item.url);
+          photosContainer.appendChild(img);
+        });
+      } else {
+        photosContainer.innerHTML = '<p style="color:var(--text-soft); font-size:0.85rem;">Henüz fotoğraf eklenmemiş ama kalplerimiz bir! 💖</p>';
+      }
+      
+      document.getElementById('milestoneModalBack').classList.add('open');
+      triggerConfetti();
+    }
+
+    document.getElementById('closeMilestoneModal').onclick = () => {
+      document.getElementById('milestoneModalBack').classList.remove('open');
+    };
+
     function updateMilestones(start, now) {
       let y = now.getFullYear() - start.getFullYear();
       let mo = now.getMonth() - start.getMonth();
@@ -554,8 +607,8 @@
       if (lastCelebratedMonth === -999) {
         lastCelebratedMonth = totalMonthsPassed;
         localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
-      } else if (totalMonthsPassed > lastCelebratedMonth && progress >= 100) {
-        triggerConfetti();
+      } else if (totalMonthsPassed > lastCelebratedMonth) {
+        openMilestoneModal(totalMonthsPassed);
         lastCelebratedMonth = totalMonthsPassed;
         localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
       }
