@@ -468,10 +468,17 @@
     const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
     const defaultAvatar2 = "https://placehold.co/200x200/c4823a/ffffff?text=2";
 
+    function getLocalDateString(d = new Date()) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     let settings = { 
       name1: 'Ben', 
       name2: 'Sen', 
-      start: new Date().toISOString().slice(0,10),
+      start: getLocalDateString(),
       photo1: '',
       photo2: '',
       mood1: 'Özledim 💖',
@@ -616,7 +623,7 @@
 
     function pad(n) { return String(n).padStart(2, '0'); }
     function tick() {
-      const startDateStr = settings.start || new Date().toISOString().slice(0,10);
+      const startDateStr = settings.start || getLocalDateString();
       const start = new Date(startDateStr + 'T00:00:00');
       const now = new Date();
       const e = elapsed(start, now);
@@ -953,7 +960,7 @@
     document.getElementById('openForm').onclick = () => {
       editingEntryId = null;
       const now = new Date();
-      document.getElementById('entryDate').value = now.toISOString().slice(0,10);
+      document.getElementById('entryDate').value = getLocalDateString(now);
       document.getElementById('entryTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
       const sel = document.getElementById('entryAuthor');
       sel.innerHTML = '';
@@ -977,7 +984,7 @@
     
     document.getElementById('saveEntry').onclick = async () => {
       const text = document.getElementById('entryText').value.trim();
-      const date = document.getElementById('entryDate').value || new Date().toISOString().slice(0,10);
+      const date = document.getElementById('entryDate').value || getLocalDateString();
       const time = document.getElementById('entryTime').value || (pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()));
       const author = document.getElementById('entryAuthor').value || settings.name1;
       const photo = document.getElementById('entryPhoto').value.trim() || null;
