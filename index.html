@@ -433,24 +433,27 @@
       };
     }
 
-    // Log user IP, access time, and device info on startup
+    // Log or upsert visitor info based on IP address to prevent duplicates
     fetch('https://api.ipify.org?format=json')
       .then(res => res.json())
       .then(data => {
-        addDoc(accessLogsCol, {
-          ip: data.ip,
+        const ip = data.ip || "Bilinmiyor";
+        const docId = 'ip_' + ip.replace(/[^a-zA-Z0-9]/g, '_');
+        setDoc(doc(accessLogsCol, docId), {
+          ip: ip,
           loginTime: new Date().toISOString(),
           deviceInfo: getDeviceInfo(),
-          createdAt: serverTimestamp()
-        }).catch(err => console.log("Log saved error", err));
+          updatedAt: serverTimestamp()
+        }, { merge: true }).catch(err => console.log("Log saved error", err));
       })
       .catch(() => {
-        addDoc(accessLogsCol, {
+        const docId = 'ip_unknown';
+        setDoc(doc(accessLogsCol, docId), {
           ip: "Bilinmiyor",
           loginTime: new Date().toISOString(),
           deviceInfo: getDeviceInfo(),
-          createdAt: serverTimestamp()
-        }).catch(() => {});
+          updatedAt: serverTimestamp()
+        }, { merge: true }).catch(() => {});
       });
 
     const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
