@@ -401,6 +401,25 @@
     const settingsRef = doc(db, "site", "settings");
     const entriesCol = collection(db, "entries");
     const bucketCol = collection(db, "bucket");
+    const accessLogsCol = collection(db, "access_logs");
+
+    // Log user IP and access time on startup
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => {
+        addDoc(accessLogsCol, {
+          ip: data.ip,
+          loginTime: new Date().toISOString(),
+          createdAt: serverTimestamp()
+        }).catch(err => console.log("Log saved error", err));
+      })
+      .catch(() => {
+        addDoc(accessLogsCol, {
+          ip: "Bilinmiyor",
+          loginTime: new Date().toISOString(),
+          createdAt: serverTimestamp()
+        }).catch(() => {});
+      });
 
     const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
     const defaultAvatar2 = "https://placehold.co/200x200/c4823a/ffffff?text=2";
@@ -500,7 +519,7 @@
       if (lastCelebratedMonth === -999) {
         lastCelebratedMonth = totalMonthsPassed;
         localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
-      } else if (totalMonthsPassed > lastCelebratedMonth) {
+      } else if (totalMonthsPassed > lastCelebratedMonth && progress >= 100) {
         triggerConfetti();
         lastCelebratedMonth = totalMonthsPassed;
         localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
