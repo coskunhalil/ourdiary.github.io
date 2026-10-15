@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
   :root {
     --bg: #FBF1EA; --bg-soft: #F5E1D6; --card: #FFFFFF;
@@ -185,6 +184,7 @@
   .lightbox-img { max-width: 92vw; max-height: 85vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; }
   .lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; }
 
+  /* Gallery styles */
   .gallery-section { margin-top: 24px; }
   .gallery-grid {
     display: grid;
@@ -309,32 +309,6 @@
     <p class="empty" id="galleryEmptyMsg" style="display:none; text-align:center; padding:10px 0;">Henüz hiç fotoğraf eklenmemiş.</p>
   </div>
 
-  <div class="canvas-section">
-    <hr class="divider">
-    <h2>Ortak Çizim Tuvali 🎨</h2>
-    <div class="canvas-controls-panel" style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div id="peerStatus" style="font-size:0.88rem; color:var(--text-soft); font-weight:500;">🔄 Sevgilinizle otomatik bağlantı kuruluyor...</div>
-      <div id="autoSaveStatus" style="font-size:0.82rem; color:var(--accent); font-weight:600;">✨ Otomatik Kaydediliyor</div>
-    </div>
-
-    <div class="drawing-tools" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; background:var(--card); padding:10px 14px; border-radius:10px; border:1px solid var(--border);">
-      <div style="display:flex; align-items:center; gap:6px;">
-        <label style="font-size:0.82rem; color:var(--text-soft);">Renk:</label>
-        <input type="color" id="brushColor" value="#c4823a" style="width:32px; height:32px; border:none; border-radius:50%; cursor:pointer; background:none;">
-      </div>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <label style="font-size:0.82rem; color:var(--text-soft);">Kalınlık:</label>
-        <input type="range" id="brushSize" min="1" max="25" value="4" style="accent-color:var(--accent);">
-      </div>
-      <button type="button" id="eraserBtn" class="add-btn surprise-btn" style="padding:6px 12px; font-size:0.8rem;">Silgi</button>
-      <button type="button" id="clearCanvasBtn" class="add-btn surprise-btn" style="padding:6px 12px; font-size:0.8rem; background:#ffebee; color:#c62828; border-color:#ffcdd2;">Temizle</button>
-    </div>
-
-    <div style="position:relative; width:100%; background:#fff; border-radius:12px; overflow:hidden; border:1px solid var(--border); box-shadow:0 4px 14px rgba(0,0,0,0.02);">
-      <canvas id="sharedCanvas" width="600" height="450" style="display:block; width:100%; height:auto; touch-action:none; cursor:crosshair;"></canvas>
-    </div>
-  </div>
-
   <div class="bucket-section">
     <hr class="divider">
     <h2>Birlikte Yapılacaklar 🎈</h2>
@@ -450,885 +424,699 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-  let db = null;
-  let auth = null;
-  let userId = null;
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-  if (typeof __firebase_config !== 'undefined') {
-    try {
-      const firebaseConfig = JSON.parse(__firebase_config);
-      const app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      auth = getAuth(app);
-
-      async function initAuthAndData() {
-        try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-          userId = auth.currentUser?.uid || crypto.randomUUID();
-          
-          // Fetch canvas from Firestore (Rule 1 public data path)
-          const canvasRef = doc(db, 'artifacts', appId, 'public', 'data', 'canvasData', 'latest');
-          const docSnap = await getDoc(canvasRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (data && data.image) {
-              const loadImg = new Image();
-              loadImg.onload = () => {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(loadImg, 0, 0);
-                localStorage.setItem('couple_canvas', data.image);
-              };
-              loadImg.src = data.image;
-              document.getElementById('autoSaveStatus').textContent = '☁️ Buluttan Yüklendi';
-            }
-          }
-        } catch (e) {
-          console.warn("Firebase init/load warning:", e);
-        }
-      }
-      initAuthAndData();
-    } catch (e) {
-      console.warn("Firebase setup error:", e);
-    }
-  }
-
-  window.saveCanvasToFirestore = async function() {
-    if (!db || !auth?.currentUser) return;
-    try {
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'canvasData', 'latest'), {
-        image: dataUrl,
-        updatedAt: Date.now(),
-        userId: auth.currentUser.uid
-      }, { merge: true });
-      document.getElementById('autoSaveStatus').textContent = '✨ Buluta Otomatik Kaydedildi';
-    } catch (err) {
-      console.warn("Firestore auto-save error:", err);
-      document.getElementById('autoSaveStatus').textContent = '✨ Yerel Kaydedildi';
-    }
+  const firebaseConfig = {
+    apiKey: "AIzaSyCpkEjaHtcuNKCbMa-dVh20_LzFI8k7BeE",
+    authDomain: "ourdiary-42e51.firebaseapp.com",
+    projectId: "ourdiary-42e51",
+    storageBucket: "ourdiary-42e51.firebasestorage.app",
+    messagingSenderId: "925978659949",
+    appId: "1:925978659949:web:5ef24b9c19e2f0b066c364"
   };
-</script>
 
-<script>
-  const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
-  const defaultAvatar2 = "https://placehold.co/200x200/c4823a/ffffff?text=2";
-
-  function getLocalDateString(d = new Date()) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  let settings = JSON.parse(localStorage.getItem('couple_settings') || JSON.stringify({
-    name1: 'Ben',
-    name2: 'Sen',
-    start: getLocalDateString(),
-    photo1: '',
-    photo2: '',
-    mood1: 'Özledim 💖',
-    mood2: 'Mutlu 😊'
-  }));
-
-  let diary = JSON.parse(localStorage.getItem('couple_diary') || JSON.stringify([
-    { id: '1', date: getLocalDateString(), time: '12:00', text: 'İkimizin sayfası başarıyla oluşturuldu! İlk anımızı buraya kaydedebiliriz. 💖', author: settings.name1 || 'Ben', photo: '', createdAt: { seconds: Date.now() / 1000 } }
-  ]));
-
-  let bucketList = JSON.parse(localStorage.getItem('couple_bucket') || JSON.stringify([
-    { id: 'b1', text: 'Birlikte gün batımını izlemek 🌅', done: false },
-    { id: 'b2', text: 'En sevdiğimiz kahvecide buluşmak ☕', done: true }
-  ]));
-
-  function saveSettings() {
-    localStorage.setItem('couple_settings', JSON.stringify(settings));
-  }
-  function saveDiary() {
-    localStorage.setItem('couple_diary', JSON.stringify(diary));
-  }
-  function saveBucket() {
-    localStorage.setItem('couple_bucket', JSON.stringify(bucketList));
-  }
-
-  let pendingDeleteType = null;
-  let pendingDeleteId = null;
-  let editingEntryId = null;
-  let storedCelebrated = parseInt(localStorage.getItem('lastCelebratedMonth') || '-999', 10);
-  let lastCelebratedMonth = storedCelebrated;
-
-  let peer = null;
-  let conn = null;
-  const canvas = document.getElementById('sharedCanvas');
-  const ctx = canvas.getContext('2d');
-  let drawing = false;
-  let lastX = 0;
-  let lastY = 0;
-  let brushColorInput = document.getElementById('brushColor');
-  let brushSizeInput = document.getElementById('brushSize');
-  let isEraserActive = false;
-  const statusEl = document.getElementById('peerStatus');
-  const autoSaveStatusEl = document.getElementById('autoSaveStatus');
-  let saveTimeout = null;
-
-  const savedCanvasData = localStorage.getItem('couple_canvas');
-  if (savedCanvasData) {
-    const loadImg = new Image();
-    loadImg.onload = () => {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(loadImg, 0, 0);
-    };
-    loadImg.src = savedCanvasData;
+  if (firebaseConfig.apiKey === "BURAYA_YAPISTIR") {
+    document.getElementById('app').innerHTML =
+      '<div class="setup-warning">Bu sayfa henüz kurulmadı.<br>Firebase bilgilerinizi ekleyin.</div>';
   } else {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+    const {
+      getFirestore, doc, setDoc, onSnapshot, updateDoc,
+      collection, addDoc, deleteDoc, serverTimestamp
+    } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
-  function getCanvasCoords(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const settingsRef = doc(db, "site", "settings");
+    const entriesCol = collection(db, "entries");
+    const bucketCol = collection(db, "bucket");
+    const accessLogsCol = collection(db, "access_logs");
+
+    function getDeviceInfo() {
+      const ua = navigator.userAgent;
+      let device = "Masaüstü";
+      if (/mobile/i.test(ua)) device = "Mobil Telefon";
+      else if (/ipad|tablet/i.test(ua)) device = "Tablet";
+
+      let os = "Bilinmiyor";
+      if (ua.indexOf("Win") !== -1) os = "Windows";
+      else if (ua.indexOf("Mac") !== -1 && ua.indexOf("iPhone") === -1 && ua.indexOf("iPad") === -1) os = "macOS";
+      else if (ua.indexOf("Linux") !== -1) os = "Linux";
+      else if (ua.indexOf("Android") !== -1) os = "Android";
+      else if (ua.indexOf("iPhone") !== -1 || ua.indexOf("iPad") !== -1) os = "iOS";
+
+      let browser = "Bilinmiyor";
+      if (ua.indexOf("Chrome") !== -1 && ua.indexOf("Edg") === -1) browser = "Chrome";
+      else if (ua.indexOf("Safari") !== -1 && ua.indexOf("Chrome") === -1) browser = "Safari";
+      else if (ua.indexOf("Firefox") !== -1) browser = "Firefox";
+      else if (ua.indexOf("Edg") !== -1) browser = "Edge";
+
+      return {
+        device,
+        os,
+        browser,
+        userAgent: ua,
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+        language: navigator.language || navigator.userLanguage
+      };
+    }
+
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => {
+        const ip = data.ip || "Bilinmiyor";
+        const docId = 'ip_' + ip.replace(/[^a-zA-Z0-9]/g, '_');
+        setDoc(doc(accessLogsCol, docId), {
+          ip: ip,
+          loginTime: new Date().toISOString(),
+          deviceInfo: getDeviceInfo(),
+          updatedAt: serverTimestamp()
+        }, { merge: true }).catch(err => console.log("Log saved error", err));
+      })
+      .catch(() => {
+        const docId = 'ip_unknown';
+        setDoc(doc(accessLogsCol, docId), {
+          ip: "Bilinmiyor",
+          loginTime: new Date().toISOString(),
+          deviceInfo: getDeviceInfo(),
+          updatedAt: serverTimestamp()
+        }, { merge: true }).catch(() => {});
+      });
+
+    const defaultAvatar1 = "https://placehold.co/200x200/e4c9a3/3a2432?text=1";
+    const defaultAvatar2 = "https://placehold.co/200x200/c4823a/ffffff?text=2";
+
+    function getLocalDateString(d = new Date()) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    let settings = { 
+      name1: 'Ben', 
+      name2: 'Sen', 
+      start: getLocalDateString(),
+      photo1: '',
+      photo2: '',
+      mood1: 'Özledim 💖',
+      mood2: 'Mutlu 😊'
     };
-  }
+    let diary = [];
+    let bucketList = [];
+    let pendingDeleteType = null;
+    let pendingDeleteId = null;
+    let editingEntryId = null;
+    let storedCelebrated = parseInt(localStorage.getItem('lastCelebratedMonth') || '-999', 10);
+    let lastCelebratedMonth = storedCelebrated;
 
-  function startDrawing(e) {
-    drawing = true;
-    const coords = getCanvasCoords(e);
-    lastX = coords.x;
-    lastY = coords.y;
-    if (e.type === 'touchstart') e.preventDefault();
-  }
+    function renderProfile() {
+      document.getElementById('namesDisplay').textContent = settings.name1 + ' & ' + settings.name2;
+      
+      const img1 = document.getElementById('photo1Img');
+      const img2 = document.getElementById('photo2Img');
+      img1.src = settings.photo1 || defaultAvatar1;
+      img1.onerror = () => { img1.src = defaultAvatar1; };
+      img2.src = settings.photo2 || defaultAvatar2;
+      img2.onerror = () => { img2.src = defaultAvatar2; };
 
-  function draw(e) {
-    if (!drawing) return;
-    if (e.type === 'touchmove') e.preventDefault();
-    const coords = getCanvasCoords(e);
-    const color = isEraserActive ? '#ffffff' : brushColorInput.value;
-    const size = isEraserActive ? parseInt(brushSizeInput.value) * 3 : parseInt(brushSizeInput.value);
-
-    drawLine(lastX, lastY, coords.x, coords.y, color, size, true);
-  }
-
-  function stopDrawing() {
-    if (!drawing) return;
-    drawing = false;
-    triggerAutoSave();
-  }
-
-  function triggerAutoSave() {
-    if (saveTimeout) clearTimeout(saveTimeout);
-    autoSaveStatusEl.textContent = '💾 Kaydediliyor...';
-    saveTimeout = setTimeout(() => {
-      try {
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        localStorage.setItem('couple_canvas', dataUrl);
-        if (typeof window.saveCanvasToFirestore === 'function') {
-          window.saveCanvasToFirestore();
-        } else {
-          autoSaveStatusEl.textContent = '✨ Otomatik Kaydedildi';
-        }
-      } catch (err) {
-        autoSaveStatusEl.textContent = 'Kayıt hatası';
-      }
-    }, 1000);
-  }
-
-  function drawLine(x0, y0, x1, y1, color, size, emit) {
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-    ctx.closePath();
-
-    lastX = x1;
-    lastY = y1;
-
-    if (emit && conn && conn.open) {
-      try {
-        conn.send({ type: 'draw', x0, y0, x1, y1, color, size });
-      } catch(e) {}
+      document.getElementById('moodBadgeName1').textContent = settings.name1 || 'Ben';
+      document.getElementById('moodBadgeText1').textContent = settings.mood1 || 'Özledim 💖';
+      document.getElementById('moodBadgeName2').textContent = settings.name2 || 'Sen';
+      document.getElementById('moodBadgeText2').textContent = settings.mood2 || 'Mutlu 😊';
     }
-  }
 
-  canvas.addEventListener('mousedown', startDrawing);
-  canvas.addEventListener('mousemove', draw);
-  canvas.addEventListener('mouseup', stopDrawing);
-  canvas.addEventListener('mouseleave', stopDrawing);
-
-  canvas.addEventListener('touchstart', startDrawing, {passive: false});
-  canvas.addEventListener('touchmove', draw, {passive: false});
-  canvas.addEventListener('touchend', stopDrawing);
-
-  function handlePeerData(data) {
-    if (data.type === 'draw') {
-      drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
-    } else if (data.type === 'clear') {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    function elapsed(start, now) {
+      let y = now.getFullYear() - start.getFullYear();
+      let mo = now.getMonth() - start.getMonth();
+      let d = now.getDate() - start.getDate();
+      let h = now.getHours() - start.getHours();
+      let mi = now.getMinutes() - start.getMinutes();
+      let s = now.getSeconds() - start.getSeconds();
+      if (s < 0) { s += 60; mi--; }
+      if (mi < 0) { mi += 60; h--; }
+      if (h < 0) { h += 24; d--; }
+      if (d < 0) { d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); mo--; }
+      if (mo < 0) { mo += 12; y--; }
+      const totalDays = Math.max(0, Math.floor((now - start) / 86400000));
+      return { y, mo, d, h, mi, s, totalDays };
     }
-  }
 
-  function setupConnection(connectionInstance) {
-    conn = connectionInstance;
-    conn.on('open', () => {
-      statusEl.textContent = '💖 Sevgilinizle Canlı Bağlantı Kuruldu!';
-      statusEl.style.color = 'var(--accent)';
-    });
-    conn.on('data', (data) => {
-      handlePeerData(data);
-    });
-    conn.on('close', () => {
-      statusEl.textContent = 'Bağlantı kapandı, yerel modda devam ediliyor.';
-      statusEl.style.color = 'var(--text-soft)';
-    });
-  }
-
-  try {
-    if (typeof Peer !== 'undefined') {
-      peer = new Peer();
-      peer.on('open', (id) => {
-        statusEl.textContent = '✨ Hazır (Canlı tuval aktif)';
-      });
-      peer.on('connection', (incomingConn) => {
-        setupConnection(incomingConn);
-      });
-      peer.on('error', () => {
-        statusEl.textContent = 'Çevrimdışı tuval aktif';
-      });
-    }
-  } catch (err) {
-    statusEl.textContent = 'Çevrimdışı tuval aktif';
-  }
-
-  document.getElementById('clearCanvasBtn').onclick = () => {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (conn && conn.open) {
-      try { conn.send({ type: 'clear' }); } catch(e) {}
-    }
-    triggerAutoSave();
-  };
-
-  const eraserBtn = document.getElementById('eraserBtn');
-  eraserBtn.onclick = () => {
-    isEraserActive = !isEraserActive;
-    if (isEraserActive) {
-      eraserBtn.style.background = 'var(--accent)';
-      eraserBtn.style.color = 'var(--card)';
-      canvas.style.cursor = 'cell';
-    } else {
-      eraserBtn.style.background = 'var(--bg-soft)';
-      eraserBtn.style.color = 'var(--text)';
-      canvas.style.cursor = 'crosshair';
-    }
-  };
-
-  function renderProfile() {
-    document.getElementById('namesDisplay').textContent = (settings.name1 || 'Ben') + ' & ' + (settings.name2 || 'Sen');
-    
-    const img1 = document.getElementById('photo1Img');
-    const img2 = document.getElementById('photo2Img');
-    img1.src = settings.photo1 || defaultAvatar1;
-    img1.onerror = () => { img1.src = defaultAvatar1; };
-    img2.src = settings.photo2 || defaultAvatar2;
-    img2.onerror = () => { img2.src = defaultAvatar2; };
-
-    document.getElementById('moodBadgeName1').textContent = settings.name1 || 'Ben';
-    document.getElementById('moodBadgeText1').textContent = settings.mood1 || 'Özledim 💖';
-    document.getElementById('moodBadgeName2').textContent = settings.name2 || 'Sen';
-    document.getElementById('moodBadgeText2').textContent = settings.mood2 || 'Mutlu 😊';
-  }
-
-  function elapsed(start, now) {
-    let y = now.getFullYear() - start.getFullYear();
-    let mo = now.getMonth() - start.getMonth();
-    let d = now.getDate() - start.getDate();
-    let h = now.getHours() - start.getHours();
-    let mi = now.getMinutes() - start.getMinutes();
-    let s = now.getSeconds() - start.getSeconds();
-    if (s < 0) { s += 60; mi--; }
-    if (mi < 0) { mi += 60; h--; }
-    if (h < 0) { h += 24; d--; }
-    if (d < 0) { d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); mo--; }
-    if (mo < 0) { mo += 12; y--; }
-    const totalDays = Math.max(0, Math.floor((now - start) / 86400000));
-    return { y, mo, d, h, mi, s, totalDays };
-  }
-
-  function triggerConfetti() {
-    if (typeof confetti === 'function') {
-      try {
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
         confetti({
           particleCount: 120,
           spread: 80,
           origin: { y: 0.6 },
           useWorker: false
         });
-      } catch(e) {}
+      }
     }
-  }
 
-  function openMilestoneModal(monthNum) {
-    document.getElementById('milestoneModalTitle').textContent = `🎉 ${monthNum}. Ayımız Kutlu Olsun! 🎉`;
-    document.getElementById('milestoneModalSub').textContent = `Birlikte ${monthNum} harika ay geçirdik. Nice mutlu anılarımıza!`;
-    
-    const photosContainer = document.getElementById('milestoneModalPhotos');
-    photosContainer.innerHTML = '';
-    
-    const allPhotos = [];
-    if (settings.photo1) allPhotos.push({ url: settings.photo1, title: 'Profil 1' });
-    if (settings.photo2) allPhotos.push({ url: settings.photo2, title: 'Profil 2' });
-    
-    diary.forEach(item => {
-      if (item.photo) {
-        allPhotos.push({
-          url: item.photo,
-          title: `${item.author || ''} - ${item.date || ''}`
+    function openMilestoneModal(monthNum) {
+      document.getElementById('milestoneModalTitle').textContent = `🎉 ${monthNum}. Ayımız Kutlu Olsun! 🎉`;
+      document.getElementById('milestoneModalSub').textContent = `Birlikte ${monthNum} harika ay geçirdik. Nice mutlu anılarımıza!`;
+      
+      const photosContainer = document.getElementById('milestoneModalPhotos');
+      photosContainer.innerHTML = '';
+      
+      const allPhotos = [];
+      if (settings.photo1) allPhotos.push({ url: settings.photo1, title: 'Profil 1' });
+      if (settings.photo2) allPhotos.push({ url: settings.photo2, title: 'Profil 2' });
+      
+      // Collect every single photo uploaded in diary entries
+      diary.forEach(item => {
+        if (item.photo) {
+          allPhotos.push({
+            url: item.photo,
+            title: `${item.author || ''} - ${item.date || ''}`
+          });
+        }
+      });
+
+      if (allPhotos.length > 0) {
+        allPhotos.forEach(item => {
+          const img = document.createElement('img');
+          img.src = item.url;
+          img.title = item.title;
+          img.style.cssText = 'width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s;';
+          img.onmouseover = () => { img.style.transform = 'scale(1.06)'; };
+          img.onmouseout = () => { img.style.transform = 'scale(1)'; };
+          img.onclick = () => openLightbox(item.url);
+          photosContainer.appendChild(img);
+        });
+      } else {
+        photosContainer.innerHTML = '<p style="color:var(--text-soft); font-size:0.85rem;">Henüz fotoğraf eklenmemiş ama kalplerimiz bir! 💖</p>';
+      }
+      
+      document.getElementById('milestoneModalBack').classList.add('open');
+      triggerConfetti();
+    }
+
+    document.getElementById('closeMilestoneModal').onclick = () => {
+      document.getElementById('milestoneModalBack').classList.remove('open');
+    };
+
+    function updateMilestones(start, now) {
+      let y = now.getFullYear() - start.getFullYear();
+      let mo = now.getMonth() - start.getMonth();
+      let totalMonthsPassed = y * 12 + mo;
+      
+      if (now.getDate() < start.getDate()) {
+        totalMonthsPassed--;
+      }
+      if (totalMonthsPassed < 0) totalMonthsPassed = 0;
+
+      const nextMonthNum = totalMonthsPassed + 1;
+
+      const prevTargetDate = new Date(start);
+      prevTargetDate.setMonth(start.getMonth() + totalMonthsPassed);
+
+      const nextTargetDate = new Date(start);
+      nextTargetDate.setMonth(start.getMonth() + nextMonthNum);
+
+      const totalMs = nextTargetDate - prevTargetDate;
+      const passedMs = now - prevTargetDate;
+      let progress = 0;
+      if (totalMs > 0) {
+        progress = Math.min(100, Math.max(0, (passedMs / totalMs) * 100));
+      }
+
+      const daysLeft = Math.max(0, Math.ceil((nextTargetDate - now) / 86400000));
+
+      document.getElementById('milestoneTitle').textContent = `Sonraki Hedef: ${nextMonthNum}. Ay 🎉`;
+      document.getElementById('milestoneBar').style.width = `${progress.toFixed(1)}%`;
+      document.getElementById('milestoneStart').textContent = `${totalMonthsPassed}. Ay Tamamlandı`;
+      document.getElementById('milestoneEnd').textContent = `${daysLeft} Gün Kaldı (%${Math.floor(progress)})`;
+
+      if (lastCelebratedMonth === -999) {
+        lastCelebratedMonth = totalMonthsPassed;
+        localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
+      } else if (totalMonthsPassed > lastCelebratedMonth) {
+        openMilestoneModal(totalMonthsPassed);
+        lastCelebratedMonth = totalMonthsPassed;
+        localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
+      }
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+      const startDateStr = settings.start || getLocalDateString();
+      const start = new Date(startDateStr + 'T00:00:00');
+      const now = new Date();
+      const e = elapsed(start, now);
+      document.getElementById('totalDays').textContent = e.totalDays;
+      document.getElementById('breakdown').textContent = e.y + ' yıl, ' + e.mo + ' ay, ' + e.d + ' gün';
+      document.getElementById('liveClock').textContent = pad(e.h) + ' sa ' + pad(e.mi) + ' dk ' + pad(e.s) + ' sn';
+      updateMilestones(start, now);
+    }
+
+    const openDays = new Set();
+    function renderDiary() {
+      const list = document.getElementById('entriesList');
+      const empty = document.getElementById('emptyMsg');
+      list.innerHTML = '';
+      empty.style.display = diary.length ? 'none' : 'block';
+
+      const sortedDiary = [...diary].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      const groups = new Map();
+      for (const entryItem of sortedDiary) {
+        const dateKey = entryItem.date || 'Tarihsiz';
+        if (!groups.has(dateKey)) groups.set(dateKey, []);
+        groups.get(dateKey).push(entryItem);
+      }
+
+      for (const [date, entries] of groups) {
+        const dayLi = document.createElement('li');
+        dayLi.className = 'day';
+        const det = document.createElement('details');
+        det.open = openDays.has(date);
+        det.addEventListener('toggle', () => { if (det.open) openDays.add(date); else openDays.delete(date); });
+
+        const sum = document.createElement('summary');
+        const title = document.createElement('span');
+        title.className = 'day-title';
+        if (date === 'Tarihsiz') title.textContent = 'Tarihsiz Anılar';
+        else {
+          const d = new Date(date + 'T00:00:00');
+          title.textContent = isNaN(d.getTime()) ? date : d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        const count = document.createElement('span');
+        count.className = 'day-count';
+        count.textContent = entries.length + ' not';
+        sum.append(title, count);
+        det.appendChild(sum);
+
+        entries.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
+        const body = document.createElement('div');
+        body.className = 'day-entries';
+        const nowMs = Date.now();
+
+        for (const item of entries) {
+          const box = document.createElement('div');
+          box.className = 'entry';
+          
+          const who = document.createElement('div');
+          who.className = 'date';
+          who.textContent = (item.author || '') + (item.time ? ' • ' + item.time : '');
+          
+          const p = document.createElement('p');
+          p.textContent = item.text || '';
+          
+          if (item.author || item.time) box.appendChild(who);
+          box.appendChild(p);
+
+          if (item.photo) {
+            const img = document.createElement('img');
+            img.src = item.photo;
+            img.className = 'entry-photo-thumb';
+            img.alt = 'Anı Fotoğrafı';
+            img.onclick = () => openLightbox(item.photo);
+            box.appendChild(img);
+          }
+
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'entry-actions';
+
+          const createdMs = item.createdAt ? item.createdAt.seconds * 1000 : nowMs;
+          const isEditable = (nowMs - createdMs) <= 5 * 60 * 1000;
+
+          if (isEditable) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            editBtn.textContent = 'Düzenle';
+            editBtn.onclick = () => openEditForm(item);
+            actionsDiv.appendChild(editBtn);
+          }
+
+          const del = document.createElement('button');
+          del.className = 'del'; 
+          del.textContent = 'Sil';
+          del.onclick = () => {
+            pendingDeleteType = 'entry';
+            pendingDeleteId = item.id;
+            document.getElementById('deleteModalBack').classList.add('open');
+          };
+          actionsDiv.appendChild(del);
+
+          box.appendChild(actionsDiv);
+          body.appendChild(box);
+        }
+        det.appendChild(body);
+        dayLi.appendChild(det);
+        list.appendChild(dayLi);
+      }
+      renderPhotoGallery();
+    }
+
+    function renderPhotoGallery() {
+      const galleryGrid = document.getElementById('galleryGrid');
+      const galleryEmptyMsg = document.getElementById('galleryEmptyMsg');
+      if (!galleryGrid) return;
+      galleryGrid.innerHTML = '';
+      
+      const photos = [];
+      diary.forEach(item => {
+        if (item.photo) {
+          photos.push({
+            url: item.photo,
+            date: item.date || '',
+            createdAt: item.createdAt ? item.createdAt.seconds : 0
+          });
+        }
+      });
+
+      // Sort photos by most recent upload date/time descending
+      photos.sort((a, b) => {
+        if (b.createdAt !== a.createdAt) {
+          return b.createdAt - a.createdAt;
+        }
+        return (b.date || '').localeCompare(a.date || '');
+      });
+
+      if (photos.length === 0) {
+        galleryEmptyMsg.style.display = 'block';
+        galleryGrid.style.display = 'none';
+      } else {
+        galleryEmptyMsg.style.display = 'none';
+        galleryGrid.style.display = 'grid';
+        photos.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'gallery-item';
+          const img = document.createElement('img');
+          img.src = p.url;
+          img.alt = 'Anı Fotoğrafı';
+          img.loading = 'lazy';
+          div.appendChild(img);
+          div.onclick = () => openLightbox(p.url);
+          galleryGrid.appendChild(div);
         });
       }
-    });
+    }
 
-    if (allPhotos.length > 0) {
-      allPhotos.forEach(item => {
-        const img = document.createElement('img');
-        img.src = item.url;
-        img.title = item.title;
-        img.style.cssText = 'width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s;';
-        img.onclick = () => openLightbox(item.url);
-        photosContainer.appendChild(img);
+    function openEditForm(item) {
+      editingEntryId = item.id;
+      document.getElementById('entryText').value = item.text || '';
+      document.getElementById('entryDate').value = item.date || new Date().toISOString().slice(0,10);
+      document.getElementById('entryTime').value = item.time || '';
+      
+      const sel = document.getElementById('entryAuthor');
+      sel.innerHTML = '';
+      [settings.name1, settings.name2].forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        if (item.author === n) opt.selected = true;
+        sel.appendChild(opt);
       });
-    } else {
-      photosContainer.innerHTML = '<p style="color:var(--text-soft); font-size:0.85rem;">Henüz fotoğraf eklenmemiş ama kalplerimiz bir! 💖</p>';
-    }
-    
-    document.getElementById('milestoneModalBack').classList.add('open');
-    triggerConfetti();
-  }
 
-  document.getElementById('closeMilestoneModal').onclick = () => {
-    document.getElementById('milestoneModalBack').classList.remove('open');
-  };
-
-  function updateMilestones(start, now) {
-    let y = now.getFullYear() - start.getFullYear();
-    let mo = now.getMonth() - start.getMonth();
-    let totalMonthsPassed = y * 12 + mo;
-    
-    if (now.getDate() < start.getDate()) {
-      totalMonthsPassed--;
-    }
-    if (totalMonthsPassed < 0) totalMonthsPassed = 0;
-
-    const nextMonthNum = totalMonthsPassed + 1;
-
-    const prevTargetDate = new Date(start);
-    prevTargetDate.setMonth(start.getMonth() + totalMonthsPassed);
-
-    const nextTargetDate = new Date(start);
-    nextTargetDate.setMonth(start.getMonth() + nextMonthNum);
-
-    const totalMs = nextTargetDate - prevTargetDate;
-    const passedMs = now - prevTargetDate;
-    let progress = 0;
-    if (totalMs > 0) {
-      progress = Math.min(100, Math.max(0, (passedMs / totalMs) * 100));
-    }
-
-    const daysLeft = Math.max(0, Math.ceil((nextTargetDate - now) / 86400000));
-
-    document.getElementById('milestoneTitle').textContent = `Sonraki Hedef: ${nextMonthNum}. Ay 🎉`;
-    document.getElementById('milestoneBar').style.width = `${progress.toFixed(1)}%`;
-    document.getElementById('milestoneStart').textContent = `${totalMonthsPassed}. Ay Tamamlandı`;
-    document.getElementById('milestoneEnd').textContent = `${daysLeft} Gün Kaldı (%${Math.floor(progress)})`;
-
-    if (lastCelebratedMonth === -999) {
-      lastCelebratedMonth = totalMonthsPassed;
-      localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
-    } else if (totalMonthsPassed > lastCelebratedMonth) {
-      openMilestoneModal(totalMonthsPassed);
-      lastCelebratedMonth = totalMonthsPassed;
-      localStorage.setItem('lastCelebratedMonth', totalMonthsPassed);
-    }
-  }
-
-  function pad(n) { return String(n).padStart(2, '0'); }
-  function tick() {
-    const startDateStr = settings.start || getLocalDateString();
-    const start = new Date(startDateStr + 'T00:00:00');
-    if (isNaN(start.getTime())) return;
-    const now = new Date();
-    const e = elapsed(start, now);
-    document.getElementById('totalDays').textContent = e.totalDays;
-    document.getElementById('breakdown').textContent = e.y + ' yıl, ' + e.mo + ' ay, ' + e.d + ' gün';
-    document.getElementById('liveClock').textContent = pad(e.h) + ' sa ' + pad(e.mi) + ' dk ' + pad(e.s) + ' sn';
-    updateMilestones(start, now);
-  }
-
-  const openDays = new Set();
-  function renderDiary() {
-    const list = document.getElementById('entriesList');
-    const empty = document.getElementById('emptyMsg');
-    list.innerHTML = '';
-    empty.style.display = diary.length ? 'none' : 'block';
-
-    const sortedDiary = [...diary].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const groups = new Map();
-    for (const entryItem of sortedDiary) {
-      const dateKey = entryItem.date || 'Tarihsiz';
-      if (!groups.has(dateKey)) groups.set(dateKey, []);
-      groups.get(dateKey).push(entryItem);
-    }
-
-    for (const [date, entries] of groups) {
-      const dayLi = document.createElement('li');
-      dayLi.className = 'day';
-      const det = document.createElement('details');
-      det.open = openDays.has(date);
-      det.addEventListener('toggle', () => { if (det.open) openDays.add(date); else openDays.delete(date); });
-
-      const sum = document.createElement('summary');
-      const title = document.createElement('span');
-      title.className = 'day-title';
-      if (date === 'Tarihsiz') title.textContent = 'Tarihsiz Anılar';
-      else {
-        const d = new Date(date + 'T00:00:00');
-        title.textContent = isNaN(d.getTime()) ? date : d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      if (item.photo) {
+        document.getElementById('entryPhoto').value = item.photo;
+        document.getElementById('entryPhotoPreview').src = item.photo;
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
+      } else {
+        document.getElementById('entryPhoto').value = '';
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
       }
-      const count = document.createElement('span');
-      count.className = 'day-count';
-      count.textContent = entries.length + ' not';
-      sum.append(title, count);
-      det.appendChild(sum);
 
-      entries.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0));
-      const body = document.createElement('div');
-      body.className = 'day-entries';
+      entryForm.classList.add('open');
+      document.getElementById('entryText').focus();
+    }
 
-      for (const item of entries) {
-        const box = document.createElement('div');
-        box.className = 'entry';
+    function renderBucketList() {
+      const list = document.getElementById('bucketList');
+      list.innerHTML = '';
+      bucketList.forEach(item => {
+        const li = document.createElement('li');
+        li.className = `bucket-item ${item.done ? 'done' : ''}`;
         
-        const who = document.createElement('div');
-        who.className = 'date';
-        who.textContent = (item.author || '') + (item.time ? ' • ' + item.time : '');
+        const content = document.createElement('div');
+        content.className = 'bucket-item-content';
         
-        const p = document.createElement('p');
-        p.textContent = item.text || '';
-        
-        if (item.author || item.time) box.appendChild(who);
-        box.appendChild(p);
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = !!item.done;
+        chk.onchange = async () => {
+          await updateDoc(doc(db, 'bucket', item.id), { done: chk.checked });
+        };
 
-        if (item.photo) {
-          const img = document.createElement('img');
-          img.src = item.photo;
-          img.className = 'entry-photo-thumb';
-          img.alt = 'Anı Fotoğrafı';
-          img.onclick = () => openLightbox(item.photo);
-          box.appendChild(img);
-        }
+        const span = document.createElement('span');
+        span.textContent = item.text;
 
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'entry-actions';
-
-        const editBtn = document.createElement('button');
-        editBtn.className = 'edit-btn';
-        editBtn.textContent = 'Düzenle';
-        editBtn.onclick = () => openEditForm(item);
-        actionsDiv.appendChild(editBtn);
+        content.append(chk, span);
 
         const del = document.createElement('button');
-        del.className = 'del'; 
-        del.textContent = 'Sil';
+        del.className = 'bucket-del';
+        del.textContent = '✕';
         del.onclick = () => {
-          pendingDeleteType = 'entry';
+          pendingDeleteType = 'bucket';
           pendingDeleteId = item.id;
           document.getElementById('deleteModalBack').classList.add('open');
         };
-        actionsDiv.appendChild(del);
 
-        box.appendChild(actionsDiv);
-        body.appendChild(box);
-      }
-      det.appendChild(body);
-      dayLi.appendChild(det);
-      list.appendChild(dayLi);
+        li.append(content, del);
+        list.appendChild(li);
+      });
     }
-    renderPhotoGallery();
-  }
 
-  function renderPhotoGallery() {
-    const galleryGrid = document.getElementById('galleryGrid');
-    const galleryEmptyMsg = document.getElementById('galleryEmptyMsg');
-    if (!galleryGrid) return;
-    galleryGrid.innerHTML = '';
+    function openLightbox(url) {
+      document.getElementById('lightboxImg').src = url;
+      document.getElementById('lightboxModal').classList.add('open');
+    }
+    document.getElementById('closeLightbox').onclick = () => {
+      document.getElementById('lightboxModal').classList.remove('open');
+    };
+    document.getElementById('lightboxModal').onclick = (e) => {
+      if (e.target.id === 'lightboxModal') {
+        document.getElementById('lightboxModal').classList.remove('open');
+      }
+    };
+
+    document.getElementById('cancelDeleteBtn').onclick = () => {
+      pendingDeleteId = null;
+      document.getElementById('deleteModalBack').classList.remove('open');
+    };
+    document.getElementById('confirmDeleteBtn').onclick = async () => {
+      if (pendingDeleteId) {
+        if (pendingDeleteType === 'entry') await deleteDoc(doc(db, 'entries', pendingDeleteId));
+        else if (pendingDeleteType === 'bucket') await deleteDoc(doc(db, 'bucket', pendingDeleteId));
+        pendingDeleteId = null;
+      }
+      document.getElementById('deleteModalBack').classList.remove('open');
+    };
+
+    onSnapshot(settingsRef, (snap) => {
+      if (snap.exists()) { settings = { ...settings, ...snap.data() }; renderProfile(); tick(); renderPhotoGallery(); }
+    });
+
+    onSnapshot(entriesCol, (snap) => {
+      diary = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderDiary();
+      renderPhotoGallery();
+    });
+
+    onSnapshot(bucketCol, (snap) => {
+      bucketList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderBucketList();
+    });
+
+    function processImageFile(file, callback, maxDim = 600) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
+          else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          callback(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('file1').addEventListener('change', (e) => processImageFile(e.target.files[0], (data) => {
+      document.getElementById('photo1').value = data;
+    }, 300));
     
-    const photos = [];
-    diary.forEach(item => {
-      if (item.photo) {
-        photos.push({
-          url: item.photo,
-          date: item.date || '',
-          createdAt: item.createdAt ? item.createdAt.seconds : 0
+    document.getElementById('file2').addEventListener('change', (e) => processImageFile(e.target.files[0], (data) => {
+      document.getElementById('photo2').value = data;
+    }, 300));
+
+    document.getElementById('entryFile').addEventListener('change', (e) => {
+      processImageFile(e.target.files[0], (data) => {
+        document.getElementById('entryPhoto').value = data;
+        document.getElementById('entryPhotoPreview').src = data;
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
+      }, 700);
+    });
+
+    document.getElementById('entryPhoto').addEventListener('input', (e) => {
+      const url = e.target.value.trim();
+      if (url) {
+        document.getElementById('entryPhotoPreview').src = url;
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
+      } else {
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+      }
+    });
+
+    document.getElementById('removeEntryPhoto').onclick = () => {
+      document.getElementById('entryPhoto').value = '';
+      document.getElementById('entryFile').value = '';
+      document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+    };
+
+    document.getElementById('avatarsWrapper').onclick = () => document.getElementById('settingsBtn').click();
+    document.getElementById('settingsBtn').onclick = () => {
+      document.getElementById('name1').value = settings.name1 || '';
+      document.getElementById('name2').value = settings.name2 || '';
+      document.getElementById('photo1').value = settings.photo1 || '';
+      document.getElementById('photo2').value = settings.photo2 || '';
+      document.getElementById('startDate').value = settings.start || '';
+      document.getElementById('modalBack').classList.add('open');
+    };
+    
+    document.getElementById('closeModal').onclick = () => document.getElementById('modalBack').classList.remove('open');
+    document.getElementById('saveSettings').onclick = async () => {
+      const newSettings = {
+        name1: document.getElementById('name1').value.trim() || 'Ben',
+        name2: document.getElementById('name2').value.trim() || 'Sen',
+        photo1: document.getElementById('photo1').value.trim(),
+        photo2: document.getElementById('photo2').value.trim(),
+        start: document.getElementById('startDate').value || settings.start
+      };
+      await setDoc(settingsRef, newSettings, { merge: true });
+      document.getElementById('modalBack').classList.remove('open');
+    };
+
+    const moodModalBack = document.getElementById('moodModalBack');
+    const openMoodModal = () => {
+      const sel = document.getElementById('moodAuthorSelect');
+      sel.innerHTML = '';
+      const opt1 = document.createElement('option'); opt1.value = '1'; opt1.textContent = settings.name1 || 'Ben';
+      const opt2 = document.createElement('option'); opt2.value = '2'; opt2.textContent = settings.name2 || 'Sen';
+      sel.append(opt1, opt2);
+      document.getElementById('customMoodInput').value = '';
+      moodModalBack.classList.add('open');
+    };
+
+    document.getElementById('moodBadge1').onclick = openMoodModal;
+    document.getElementById('moodBadge2').onclick = openMoodModal;
+    document.getElementById('closeMoodModal').onclick = () => moodModalBack.classList.remove('open');
+
+    const updateMoodInFirebase = async (moodVal) => {
+      const which = document.getElementById('moodAuthorSelect').value;
+      const fieldToUpdate = which === '1' ? { mood1: moodVal } : { mood2: moodVal };
+      await setDoc(settingsRef, fieldToUpdate, { merge: true });
+      moodModalBack.classList.remove('open');
+    };
+
+    document.querySelectorAll('.mood-option-btn').forEach(btn => {
+      btn.onclick = () => updateMoodInFirebase(btn.dataset.mood);
+    });
+
+    document.getElementById('saveCustomMoodBtn').onclick = () => {
+      const text = document.getElementById('customMoodInput').value.trim();
+      if (text) updateMoodInFirebase(text);
+    };
+
+    document.getElementById('randomMemoryBtn').onclick = () => {
+      if (!diary.length) {
+        document.getElementById('randomMemoryContent').textContent = "Henüz kayıtlı bir anınız yok! Önce aşağıdan yeni bir anı ekleyin.";
+      } else {
+        const item = diary[Math.floor(Math.random() * diary.length)];
+        let contentHtml = `<strong>${item.author ? item.author + ' dedi ki:' : 'Anı:'}</strong><br><p style="margin-top:6px; margin-bottom:10px;">${item.text}</p>`;
+        if (item.photo) {
+          contentHtml += `<img src="${item.photo}" style="max-width:100%; max-height:200px; border-radius:8px; margin-bottom:8px; display:block; cursor:pointer;" onclick="openLightbox('${item.photo}')">`;
+        }
+        contentHtml += `<small style="color:var(--text-soft);">${item.date || ''}</small>`;
+        document.getElementById('randomMemoryContent').innerHTML = contentHtml;
+      }
+      document.getElementById('memoryModalBack').classList.add('open');
+    };
+    document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.remove('open');
+
+    const entryForm = document.getElementById('entryForm');
+    document.getElementById('openForm').onclick = () => {
+      editingEntryId = null;
+      const now = new Date();
+      document.getElementById('entryDate').value = getLocalDateString(now);
+      document.getElementById('entryTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      const sel = document.getElementById('entryAuthor');
+      sel.innerHTML = '';
+      [settings.name1, settings.name2].forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        sel.appendChild(opt);
+      });
+      document.getElementById('entryText').value = '';
+      document.getElementById('entryPhoto').value = '';
+      document.getElementById('entryFile').value = '';
+      document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+      entryForm.classList.add('open');
+      document.getElementById('entryText').focus();
+    };
+    
+    document.getElementById('cancelEntry').onclick = () => {
+      editingEntryId = null;
+      entryForm.classList.remove('open');
+    };
+    
+    document.getElementById('saveEntry').onclick = async () => {
+      const text = document.getElementById('entryText').value.trim();
+      const date = document.getElementById('entryDate').value || getLocalDateString();
+      const time = document.getElementById('entryTime').value || (pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()));
+      const author = document.getElementById('entryAuthor').value || settings.name1;
+      const photo = document.getElementById('entryPhoto').value.trim() || null;
+
+      if (!text && !photo) return;
+      
+      openDays.add(date);
+      if (editingEntryId) {
+        await updateDoc(doc(db, 'entries', editingEntryId), {
+          date,
+          time,
+          text,
+          author,
+          photo
+        });
+        editingEntryId = null;
+      } else {
+        await addDoc(entriesCol, { 
+          date, 
+          time,
+          text, 
+          author, 
+          photo, 
+          createdAt: serverTimestamp() 
         });
       }
-    });
 
-    photos.sort((a, b) => {
-      if (b.createdAt !== a.createdAt) {
-        return b.createdAt - a.createdAt;
-      }
-      return (b.date || '').localeCompare(a.date || '');
-    });
-
-    if (photos.length === 0) {
-      galleryEmptyMsg.style.display = 'block';
-      galleryGrid.style.display = 'none';
-    } else {
-      galleryEmptyMsg.style.display = 'none';
-      galleryGrid.style.display = 'grid';
-      photos.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'gallery-item';
-        const img = document.createElement('img');
-        img.src = p.url;
-        img.alt = 'Anı Fotoğrafı';
-        img.loading = 'lazy';
-        div.appendChild(img);
-        div.onclick = () => openLightbox(p.url);
-        galleryGrid.appendChild(div);
-      });
-    }
-  }
-
-  function openEditForm(item) {
-    editingEntryId = item.id;
-    document.getElementById('entryText').value = item.text || '';
-    document.getElementById('entryDate').value = item.date || new Date().toISOString().slice(0,10);
-    document.getElementById('entryTime').value = item.time || '';
-    
-    const sel = document.getElementById('entryAuthor');
-    sel.innerHTML = '';
-    [settings.name1 || 'Ben', settings.name2 || 'Sen'].forEach(n => {
-      const opt = document.createElement('option');
-      opt.value = n; opt.textContent = n;
-      if (item.author === n) opt.selected = true;
-      sel.appendChild(opt);
-    });
-
-    if (item.photo) {
-      document.getElementById('entryPhoto').value = item.photo;
-      document.getElementById('entryPhotoPreview').src = item.photo;
-      document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
-    } else {
+      document.getElementById('entryText').value = '';
       document.getElementById('entryPhoto').value = '';
+      document.getElementById('entryFile').value = '';
       document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
-    }
-
-    document.getElementById('entryForm').classList.add('open');
-    document.getElementById('entryText').focus();
-  }
-
-  function renderBucketList() {
-    const list = document.getElementById('bucketList');
-    list.innerHTML = '';
-    bucketList.forEach(item => {
-      const li = document.createElement('li');
-      li.className = `bucket-item ${item.done ? 'done' : ''}`;
-      
-      const content = document.createElement('div');
-      content.className = 'bucket-item-content';
-      
-      const chk = document.createElement('input');
-      chk.type = 'checkbox';
-      chk.checked = !!item.done;
-      chk.onchange = () => {
-        item.done = chk.checked;
-        saveBucket();
-        renderBucketList();
-      };
-
-      const span = document.createElement('span');
-      span.textContent = item.text;
-
-      content.append(chk, span);
-
-      const del = document.createElement('button');
-      del.className = 'bucket-del';
-      del.textContent = '✕';
-      del.onclick = () => {
-        pendingDeleteType = 'bucket';
-        pendingDeleteId = item.id;
-        document.getElementById('deleteModalBack').classList.add('open');
-      };
-
-      li.append(content, del);
-      list.appendChild(li);
-    });
-  }
-
-  function openLightbox(url) {
-    document.getElementById('lightboxImg').src = url;
-    document.getElementById('lightboxModal').classList.add('open');
-  }
-  document.getElementById('closeLightbox').onclick = () => {
-    document.getElementById('lightboxModal').classList.remove('open');
-  };
-  document.getElementById('lightboxModal').onclick = (e) => {
-    if (e.target.id === 'lightboxModal') {
-      document.getElementById('lightboxModal').classList.remove('open');
-    }
-  };
-
-  document.getElementById('cancelDeleteBtn').onclick = () => {
-    pendingDeleteId = null;
-    document.getElementById('deleteModalBack').classList.remove('open');
-  };
-  document.getElementById('confirmDeleteBtn').onclick = () => {
-    if (pendingDeleteId) {
-      if (pendingDeleteType === 'entry') {
-        diary = diary.filter(i => i.id !== pendingDeleteId);
-        saveDiary();
-        renderDiary();
-      } else if (pendingDeleteType === 'bucket') {
-        bucketList = bucketList.filter(i => i.id !== pendingDeleteId);
-        saveBucket();
-        renderBucketList();
-      }
-      pendingDeleteId = null;
-    }
-    document.getElementById('deleteModalBack').classList.remove('open');
-  };
-
-  function processImageFile(file, callback, maxDim = 600) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
-        else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        callback(canvas.toDataURL('image/jpeg', 0.8));
-      };
-      img.src = e.target.result;
+      entryForm.classList.remove('open');
     };
-    reader.readAsDataURL(file);
-  }
 
-  document.getElementById('file1').addEventListener('change', (e) => processImageFile(e.target.files[0], (data) => {
-    document.getElementById('photo1').value = data;
-  }, 300));
-  
-  document.getElementById('file2').addEventListener('change', (e) => processImageFile(e.target.files[0], (data) => {
-    document.getElementById('photo2').value = data;
-  }, 300));
+    document.getElementById('addBucketBtn').onclick = async () => {
+      const input = document.getElementById('bucketInput');
+      const text = input.value.trim();
+      if (!text) return;
+      await addDoc(bucketCol, { text, done: false, createdAt: serverTimestamp() });
+      input.value = '';
+    };
 
-  document.getElementById('entryFile').addEventListener('change', (e) => {
-    processImageFile(e.target.files[0], (data) => {
-      document.getElementById('entryPhoto').value = data;
-      document.getElementById('entryPhotoPreview').src = data;
-      document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
-    }, 700);
-  });
-
-  document.getElementById('entryPhoto').addEventListener('input', (e) => {
-    const url = e.target.value.trim();
-    if (url) {
-      document.getElementById('entryPhotoPreview').src = url;
-      document.getElementById('entryPhotoPreviewContainer').style.display = 'block';
-    } else {
-      document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
-    }
-  });
-
-  document.getElementById('removeEntryPhoto').onclick = () => {
-    document.getElementById('entryPhoto').value = '';
-    document.getElementById('entryFile').value = '';
-    document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
-  };
-
-  document.getElementById('avatarsWrapper').onclick = () => document.getElementById('settingsBtn').click();
-  document.getElementById('settingsBtn').onclick = () => {
-    document.getElementById('name1').value = settings.name1 || '';
-    document.getElementById('name2').value = settings.name2 || '';
-    document.getElementById('photo1').value = settings.photo1 || '';
-    document.getElementById('photo2').value = settings.photo2 || '';
-    document.getElementById('startDate').value = settings.start || '';
-    document.getElementById('modalBack').classList.add('open');
-  };
-  
-  document.getElementById('closeModal').onclick = () => document.getElementById('modalBack').classList.remove('open');
-  document.getElementById('saveSettings').onclick = () => {
-    settings.name1 = document.getElementById('name1').value.trim() || 'Ben';
-    settings.name2 = document.getElementById('name2').value.trim() || 'Sen';
-    settings.photo1 = document.getElementById('photo1').value.trim();
-    settings.photo2 = document.getElementById('photo2').value.trim();
-    settings.start = document.getElementById('startDate').value || settings.start;
-    saveSettings();
     renderProfile();
-    tick();
-    document.getElementById('modalBack').classList.remove('open');
-  };
-
-  const moodModalBack = document.getElementById('moodModalBack');
-  const openMoodModal = () => {
-    const sel = document.getElementById('moodAuthorSelect');
-    sel.innerHTML = '';
-    const opt1 = document.createElement('option'); opt1.value = '1'; opt1.textContent = settings.name1 || 'Ben';
-    const opt2 = document.createElement('option'); opt2.value = '2'; opt2.textContent = settings.name2 || 'Sen';
-    sel.append(opt1, opt2);
-    document.getElementById('customMoodInput').value = '';
-    moodModalBack.classList.add('open');
-  };
-
-  document.getElementById('moodBadge1').onclick = openMoodModal;
-  document.getElementById('moodBadge2').onclick = openMoodModal;
-  document.getElementById('closeMoodModal').onclick = () => moodModalBack.classList.remove('open');
-
-  const updateMoodLocally = (moodVal) => {
-    const which = document.getElementById('moodAuthorSelect').value;
-    if (which === '1') settings.mood1 = moodVal;
-    else settings.mood2 = moodVal;
-    saveSettings();
-    renderProfile();
-    moodModalBack.classList.remove('open');
-  };
-
-  document.querySelectorAll('.mood-option-btn').forEach(btn => {
-    btn.onclick = () => updateMoodLocally(btn.dataset.mood);
-  });
-
-  document.getElementById('saveCustomMoodBtn').onclick = () => {
-    const text = document.getElementById('customMoodInput').value.trim();
-    if (text) updateMoodLocally(text);
-  };
-
-  document.getElementById('randomMemoryBtn').onclick = () => {
-    if (!diary.length) {
-      document.getElementById('randomMemoryContent').textContent = "Henüz kayıtlı bir anınız yok! Önce aşağıdan yeni bir anı ekleyin.";
-    } else {
-      const item = diary[Math.floor(Math.random() * diary.length)];
-      let contentHtml = `<strong>${item.author ? item.author + ' dedi ki:' : 'Anı:'}</strong><br><p style="margin-top:6px; margin-bottom:10px;">${item.text}</p>`;
-      if (item.photo) {
-        contentHtml += `<img src="${item.photo}" style="max-width:100%; max-height:200px; border-radius:8px; margin-bottom:8px; display:block; cursor:pointer;" onclick="openLightbox('${item.photo}')">`;
-      }
-      contentHtml += `<small style="color:var(--text-soft);">${item.date || ''}</small>`;
-      document.getElementById('randomMemoryContent').innerHTML = contentHtml;
-    }
-    document.getElementById('memoryModalBack').classList.add('open');
-  };
-  document.getElementById('closeMemoryModal').onclick = () => document.getElementById('memoryModalBack').classList.remove('open');
-
-  const entryForm = document.getElementById('entryForm');
-  document.getElementById('openForm').onclick = () => {
-    editingEntryId = null;
-    const now = new Date();
-    document.getElementById('entryDate').value = getLocalDateString(now);
-    document.getElementById('entryTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
-    const sel = document.getElementById('entryAuthor');
-    sel.innerHTML = '';
-    [settings.name1 || 'Ben', settings.name2 || 'Sen'].forEach(n => {
-      const opt = document.createElement('option');
-      opt.value = n; opt.textContent = n;
-      sel.appendChild(opt);
-    });
-    document.getElementById('entryText').value = '';
-    document.getElementById('entryPhoto').value = '';
-    document.getElementById('entryFile').value = '';
-    document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
-    entryForm.classList.add('open');
-    document.getElementById('entryText').focus();
-  };
-  
-  document.getElementById('cancelEntry').onclick = () => {
-    editingEntryId = null;
-    entryForm.classList.remove('open');
-  };
-  
-  document.getElementById('saveEntry').onclick = () => {
-    const text = document.getElementById('entryText').value.trim();
-    const date = document.getElementById('entryDate').value || getLocalDateString();
-    const time = document.getElementById('entryTime').value || (pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()));
-    const author = document.getElementById('entryAuthor').value || settings.name1 || 'Ben';
-    const photo = document.getElementById('entryPhoto').value.trim() || null;
-
-    if (!text && !photo) return;
-    
-    openDays.add(date);
-    if (editingEntryId) {
-      const entry = diary.find(i => i.id === editingEntryId);
-      if (entry) {
-        entry.date = date;
-        entry.time = time;
-        entry.text = text;
-        entry.author = author;
-        entry.photo = photo;
-      }
-      editingEntryId = null;
-    } else {
-      diary.push({
-        id: 'entry_' + Date.now(),
-        date,
-        time,
-        text,
-        author,
-        photo,
-        createdAt: { seconds: Date.now() / 1000 }
-      });
-    }
-
-    saveDiary();
     renderDiary();
-
-    document.getElementById('entryText').value = '';
-    document.getElementById('entryPhoto').value = '';
-    document.getElementById('entryFile').value = '';
-    document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
-    entryForm.classList.remove('open');
-  };
-
-  document.getElementById('addBucketBtn').onclick = () => {
-    const input = document.getElementById('bucketInput');
-    const text = input.value.trim();
-    if (!text) return;
-    bucketList.push({
-      id: 'b_' + Date.now(),
-      text,
-      done: false
-    });
-    saveBucket();
     renderBucketList();
-    input.value = '';
-  };
-
-  renderProfile();
-  renderDiary();
-  renderBucketList();
-  renderPhotoGallery();
-  tick();
-  setInterval(tick, 1000);
+    renderPhotoGallery();
+    tick();
+    setInterval(tick, 1000);
+  }
 </script>
 </body>
 </html>
