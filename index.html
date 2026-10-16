@@ -176,6 +176,15 @@
   .brush-size { width: 80px; accent-color: var(--accent); }
   .peer-btn { background: var(--accent); color: var(--card); border: none; padding: 7px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.82rem; white-space: nowrap; }
   .peer-btn-secondary { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); }
+  .sticker-panel { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+  .sticker-heading { font-size: .85rem; font-weight: 700; margin-bottom: 9px; }
+  .sticker-tray { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+  .sticker-choice { min-width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 9px; background: var(--card); cursor: pointer; font-size: 22px; display: inline-flex; align-items: center; justify-content: center; }
+  .sticker-choice.active { border: 2px solid var(--accent); background: var(--accent-soft); }
+  .sticker-upload-label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; font-size: .82rem; font-weight: 700; }
+  .sticker-size-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; font-size:.82rem; color:var(--text-soft); }
+  .sticker-size-row input[type="range"] { width:110px; accent-color:var(--accent); }
+  .sticker-hint { font-size:.78rem; color:var(--text-soft); margin:8px 0 0; }
 
   .modal-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 20px; z-index: 100; backdrop-filter: blur(3px); }
   .modal-back.open { display: flex; }
@@ -359,6 +368,26 @@
         <span id="saveStatus" style="font-size: 0.78rem; color: var(--text-soft);"></span>
       </div>
     </div>
+    <div class="sticker-panel" aria-label="Sticker çizim araçları">
+      <div class="sticker-heading">✨ Sticker ile resim yap</div>
+      <div class="sticker-tray" id="stickerTray">
+        <button type="button" class="sticker-choice" data-sticker="❤️" aria-label="Kalp stickerı">❤️</button>
+        <button type="button" class="sticker-choice" data-sticker="⭐" aria-label="Yıldız stickerı">⭐</button>
+        <button type="button" class="sticker-choice" data-sticker="🌸" aria-label="Çiçek stickerı">🌸</button>
+        <button type="button" class="sticker-choice" data-sticker="🐻" aria-label="Ayıcık stickerı">🐻</button>
+        <button type="button" class="sticker-choice" data-sticker="🐱" aria-label="Kedi stickerı">🐱</button>
+        <button type="button" class="sticker-choice" data-sticker="🦋" aria-label="Kelebek stickerı">🦋</button>
+        <button type="button" class="sticker-choice" data-sticker="🌈" aria-label="Gökkuşağı stickerı">🌈</button>
+        <button type="button" class="sticker-choice" data-sticker="☀️" aria-label="Güneş stickerı">☀️</button>
+        <button type="button" class="sticker-choice" data-sticker="💋" aria-label="Öpücük stickerı">💋</button>
+        <button type="button" class="sticker-choice" data-sticker="🥰" aria-label="Aşık yüz stickerı">🥰</button>
+        <label class="sticker-upload-label">＋ Kendi stickerını ekle<input type="file" id="stickerUpload" accept="image/*" hidden></label>
+        <button type="button" class="peer-btn peer-btn-secondary" id="stickerBrushBtn">🖌️ Sticker fırçası: Kapalı</button>
+        <button type="button" class="peer-btn peer-btn-secondary" id="stickerOffBtn">Normal çizime dön</button>
+      </div>
+      <div class="sticker-size-row"><label for="stickerSize">Sticker boyutu</label><input type="range" id="stickerSize" min="20" max="120" value="48"><span id="stickerSizeValue">48 px</span></div>
+      <p class="sticker-hint" id="stickerHint">Bir sticker seç, sonra tuvale dokunarak yapıştır. Sticker fırçasını açarsan sürükleyerek stickerlarla çizim yapabilirsin. Kendi resmini de sticker olarak yükleyebilirsin.</p>
+    </div>
   </div>
 </div>
 
@@ -419,6 +448,26 @@
     <div class="field">
       <label for="startDate">Başlangıç tarihi</label>
       <input id="startDate" type="date">
+    </div>
+    <hr class="divider">
+    <h3 style="font-family:'Fraunces',serif;font-weight:500;margin:0 0 14px;font-size:1.05rem;">Görünümünü Kişiselleştir ✨</h3>
+    <div class="field">
+      <label for="themeSelect">Tema</label>
+      <select id="themeSelect" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Karla',sans-serif;font-size:.95rem;">
+        <option value="auto">Cihaz ayarını kullan</option>
+        <option value="light">Açık tema</option>
+        <option value="dark">Koyu tema</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="accentSelect">Vurgu rengi</label>
+      <select id="accentSelect" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Karla',sans-serif;font-size:.95rem;">
+        <option value="amber">Sıcak kehribar</option>
+        <option value="rose">Gül kurusu</option>
+        <option value="lavender">Lavanta</option>
+        <option value="sage">Adaçayı</option>
+        <option value="ocean">Okyanus mavisi</option>
+      </select>
     </div>
 
     <div class="row">
@@ -488,6 +537,29 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const settingsRef = doc(db, "site", "settings");
+
+    // Görünüm tercihleri bu tarayıcıda saklanır; ortak profil verilerini değiştirmez.
+    const appearanceKey = 'ikimizinSayfasiAppearance';
+    const accentPalettes = {
+      amber: { accent: '#C4823A', soft: '#E4C9A3' },
+      rose: { accent: '#B85C75', soft: '#E8BFCB' },
+      lavender: { accent: '#8872B8', soft: '#D2C7EA' },
+      sage: { accent: '#66866F', soft: '#C5D8C5' },
+      ocean: { accent: '#397D9B', soft: '#B8D9E5' }
+    };
+    function readAppearance() {
+      try { return JSON.parse(localStorage.getItem(appearanceKey) || '{}'); }
+      catch (_) { return {}; }
+    }
+    function applyAppearance(prefs = readAppearance()) {
+      const root = document.documentElement;
+      if (prefs.theme === 'light' || prefs.theme === 'dark') root.dataset.theme = prefs.theme;
+      else root.removeAttribute('data-theme');
+      const palette = accentPalettes[prefs.accent] || accentPalettes.amber;
+      root.style.setProperty('--accent', palette.accent);
+      root.style.setProperty('--accent-soft', palette.soft);
+    }
+    applyAppearance();
     const canvasStateRef = doc(db, "site", "canvasState");
     const peerSignalingRef = doc(db, "site", "peerSignaling");
     const entriesCol = collection(db, "entries");
@@ -993,6 +1065,79 @@
     let lastX = 0;
     let lastY = 0;
     let isEraser = false;
+    let activeSticker = null;
+    let stickerBrush = false;
+    let lastStickerX = -Infinity;
+    let lastStickerY = -Infinity;
+
+    function paintSticker(sticker, x, y, size, sendToPeer) {
+      if (!sticker) return;
+      if (sticker.startsWith('data:image/')) {
+        const image = new Image();
+        image.onload = () => pCtx.drawImage(image, x - size / 2, y - size / 2, size, size);
+        image.src = sticker;
+      } else {
+        pCtx.save();
+        pCtx.textAlign = 'center';
+        pCtx.textBaseline = 'middle';
+        pCtx.font = `${size}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+        pCtx.fillText(sticker, x, y + size * 0.04);
+        pCtx.restore();
+      }
+      if (sendToPeer && conn && conn.open) conn.send({ type: 'sticker', sticker, x, y, size });
+    }
+
+    function chooseSticker(sticker, button) {
+      activeSticker = sticker;
+      isEraser = false;
+      document.getElementById('eraserBtn').classList.remove('active');
+      document.getElementById('stickerTray').querySelectorAll('[data-sticker]').forEach(el => el.classList.toggle('active', el === button));
+      document.getElementById('stickerHint').textContent = sticker ? 'Sticker seçildi. Tuvale dokunarak yapıştır veya sticker fırçasını açıp sürükleyerek çiz.' : 'Normal çizim modu açık.';
+      paintCanvas.style.cursor = sticker ? 'copy' : 'crosshair';
+    }
+
+    document.querySelectorAll('#stickerTray [data-sticker]').forEach(button => {
+      button.addEventListener('click', () => chooseSticker(button.dataset.sticker, button));
+    });
+    document.getElementById('stickerUpload').addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { alert('Lütfen bir resim dosyası seç.'); return; }
+      if (file.size > 2 * 1024 * 1024) { alert('Sticker resmi en fazla 2 MB olabilir.'); event.target.value = ''; return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const image = new Image();
+        image.onload = () => {
+          const max = 500;
+          const scale = Math.min(1, max / Math.max(image.width, image.height));
+          const temp = document.createElement('canvas');
+          temp.width = Math.max(1, Math.round(image.width * scale));
+          temp.height = Math.max(1, Math.round(image.height * scale));
+          temp.getContext('2d').drawImage(image, 0, 0, temp.width, temp.height);
+          chooseSticker(temp.toDataURL('image/png'), null);
+          document.getElementById('stickerHint').textContent = 'Kendi stickerın seçildi. Tuvale dokunarak yapıştırabilirsin; partnerine de PeerJS ile gönderilir.';
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    });
+    document.getElementById('stickerSize').addEventListener('input', (event) => {
+      document.getElementById('stickerSizeValue').textContent = `${event.target.value} px`;
+    });
+    document.getElementById('stickerBrushBtn').addEventListener('click', () => {
+      stickerBrush = !stickerBrush;
+      const button = document.getElementById('stickerBrushBtn');
+      button.textContent = `🖌️ Sticker fırçası: ${stickerBrush ? 'Açık' : 'Kapalı'}`;
+      button.classList.toggle('active', stickerBrush);
+    });
+    document.getElementById('stickerOffBtn').addEventListener('click', () => {
+      chooseSticker(null, null);
+      stickerBrush = false;
+      const button = document.getElementById('stickerBrushBtn');
+      button.textContent = '🖌️ Sticker fırçası: Kapalı';
+      button.classList.remove('active');
+    });
 
     function getCanvasPos(e) {
       const rect = paintCanvas.getBoundingClientRect();
@@ -1010,8 +1155,15 @@
     }
 
     function startPaint(e) {
-      isDrawing = true;
       const pos = getCanvasPos(e);
+      if (activeSticker) {
+        const size = Number(document.getElementById('stickerSize').value);
+        paintSticker(activeSticker, pos.x, pos.y, size, true);
+        lastStickerX = pos.x;
+        lastStickerY = pos.y;
+        if (!stickerBrush) { isDrawing = false; e.preventDefault(); return; }
+      }
+      isDrawing = true;
       lastX = pos.x;
       lastY = pos.y;
       e.preventDefault();
@@ -1020,6 +1172,17 @@
     function paint(e) {
       if (!isDrawing) return;
       const pos = getCanvasPos(e);
+      if (activeSticker && stickerBrush) {
+        const size = Number(document.getElementById('stickerSize').value);
+        const minDistance = Math.max(8, size * 0.42);
+        if (Math.hypot(pos.x - lastStickerX, pos.y - lastStickerY) >= minDistance) {
+          paintSticker(activeSticker, pos.x, pos.y, size, true);
+          lastStickerX = pos.x;
+          lastStickerY = pos.y;
+        }
+        e.preventDefault();
+        return;
+      }
       const color = isEraser ? '#ffffff' : document.getElementById('drawColor').value;
       const size = parseInt(document.getElementById('drawSize').value, 10) * (isEraser ? 5 : 1);
 
@@ -1064,6 +1227,7 @@
       eraserBtn.style.background = isEraser ? 'var(--accent)' : 'var(--bg-soft)';
       eraserBtn.style.color = isEraser ? 'var(--card)' : 'var(--text)';
       eraserBtn.textContent = isEraser ? 'Silgi (Aktif)' : 'Silgi';
+      if (isEraser) chooseSticker(null, null);
     };
 
     const clearCanvasBtn = document.getElementById('clearCanvasBtn');
@@ -1159,6 +1323,8 @@
       conn.on('data', (data) => {
         if (data.type === 'draw') {
           drawPaintLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
+        } else if (data.type === 'sticker') {
+          paintSticker(data.sticker, data.x, data.y, data.size, false);
         } else if (data.type === 'clear') {
           clearPaintLocal(false);
         } else if (data.type === 'state') {
@@ -1241,6 +1407,9 @@
       document.getElementById('photo1').value = settings.photo1 || '';
       document.getElementById('photo2').value = settings.photo2 || '';
       document.getElementById('startDate').value = settings.start || '';
+      const appearance = readAppearance();
+      document.getElementById('themeSelect').value = appearance.theme || 'auto';
+      document.getElementById('accentSelect').value = appearance.accent || 'amber';
       document.getElementById('modalBack').classList.add('open');
     };
     
@@ -1254,6 +1423,12 @@
         start: document.getElementById('startDate').value || settings.start
       };
       await setDoc(settingsRef, newSettings, { merge: true });
+      const appearance = {
+        theme: document.getElementById('themeSelect').value,
+        accent: document.getElementById('accentSelect').value
+      };
+      localStorage.setItem(appearanceKey, JSON.stringify(appearance));
+      applyAppearance(appearance);
       document.getElementById('modalBack').classList.remove('open');
     };
 
