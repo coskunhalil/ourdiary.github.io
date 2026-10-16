@@ -1089,8 +1089,16 @@
 
     function chooseSticker(sticker, button) {
       activeSticker = sticker;
-      isEraser = false;
-      document.getElementById('eraserBtn').classList.remove('active');
+      // Only switch away from eraser when a real sticker is selected.
+      // chooseSticker(null, null) is also used by the eraser button itself.
+      if (sticker) {
+        isEraser = false;
+        const eraserButton = document.getElementById('eraserBtn');
+        eraserButton.classList.remove('active');
+        eraserButton.style.background = 'var(--bg-soft)';
+        eraserButton.style.color = 'var(--text)';
+        eraserButton.textContent = 'Silgi';
+      }
       document.getElementById('stickerTray').querySelectorAll('[data-sticker]').forEach(el => el.classList.toggle('active', el === button));
       document.getElementById('stickerHint').textContent = sticker ? 'Sticker seçildi. Tuvale dokunarak yapıştır veya sticker fırçasını açıp sürükleyerek çiz.' : 'Normal çizim modu açık.';
       paintCanvas.style.cursor = sticker ? 'copy' : 'crosshair';
