@@ -382,7 +382,10 @@
     <h2>Birlikte Çizim Tuvali 🎨</h2>
     <div class="peer-status-bar">
       <span>Canlı Çizim Bağlantısı:</span>
-      <span id="peerStatus" style="font-weight: 700; color: var(--text-soft);">Bağlantı kuruluyor...</span>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+        <span id="peerStatus" style="font-weight: 700; color: var(--text-soft);">Bağlantı kuruluyor...</span>
+        <button type="button" id="reconnectPeerBtn" class="peer-btn">💞 Sevgilimi bul</button>
+      </div>
     </div>
 
     <div class="canvas-container">
@@ -571,7 +574,7 @@
   } else {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
     const {
-      getFirestore, doc, setDoc, onSnapshot, updateDoc,
+      getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc,
       collection, addDoc, deleteDoc, serverTimestamp
     } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
@@ -1430,7 +1433,7 @@
       }
     };
 
-    // --- Automatic Peer.js Signaling via Firestore ---
+    // --- PeerJS: yenilemeden yeniden bul / bağlan ---
     let mySessionToken = localStorage.getItem('diarySessionToken');
     if (!mySessionToken) {
       mySessionToken = 'token_' + Math.random().toString(36).substring(2, 10);
@@ -1440,51 +1443,152 @@
     let peer = null;
     let conn = null;
     let myPeerId = null;
+    let peerRetrying = false;
+
+    function setPeerStatus(message, color = 'var(--text-soft)') {
+      const status = document.getElementById('peerStatus');
+      status.textContent = message;
+      status.style.color = color;
+    }
+
+    function publishPeerId(id) {
+      return setDoc(peerSignalingRef, {
+        [mySessionToken]: { peerId: id, updatedAt: serverTimestamp() }
+      }, { merge: true });
+    }
 
     function initPeer() {
+      setPeerStatus('Bağlantı kuruluyor...');
       peer = new Peer();
 
       peer.on('open', async (id) => {
         myPeerId = id;
-        document.getElementById('peerStatus').textContent = 'Sevgilin aranıyor...';
-        await setDoc(peerSignalingRef, {
-          [mySessionToken]: { peerId: id, updatedAt: serverTimestamp() }
-        }, { merge: true }).catch(err => console.log(err));
+        try {
+          await publishPeerId(id);
+          setPeerStatus('Sevgilin aranıyor...');
+          await findPartnerAndConnect();
+        } catch (err) {
+          console.error('Peer kimliği yayımlanamadı:', err);
+          setPeerStatus('Eşleşme bilgisi gönderilemedi', '#e25555');
+        }
       });
 
       peer.on('connection', (incomingConn) => {
-        if (conn) conn.close();
+        if (conn && conn !== incomingConn && conn.open) {
+          // Zaten çalışan bağlantıyı gereksiz yere kesme.
+          incomingConn.close();
+          return;
+        }
         conn = incomingConn;
         setupPeerConnection();
       });
 
+      peer.on('disconnected', () => {
+        setPeerStatus('Sunucu bağlantısı yenileniyor...', '#c4823a');
+        try { peer.reconnect(); } catch (err) { console.warn(err); }
+      });
+
       peer.on('error', (err) => {
         console.error(err);
-        document.getElementById('peerStatus').textContent = 'Bağlantı Hatası';
-        document.getElementById('peerStatus').style.color = '#e25555';
+        if (err && (err.type === 'peer-unavailable' || err.type === 'network' || err.type === 'socket-error')) {
+          setPeerStatus('Bağlantı kurulamadı — tekrar deneyebilirsin', '#e25555');
+        } else {
+          setPeerStatus('Bağlantı hatası — tekrar deneyebilirsin', '#e25555');
+        }
       });
     }
 
-    onSnapshot(peerSignalingRef, (snap) => {
-      if (!snap.exists() || !myPeerId) return;
+    async function findPartnerAndConnect() {
+      if (!myPeerId || !peer || peer.destroyed) return;
+      if (conn && conn.open) {
+        setPeerStatus('Bağlandı 💖', '#4CAF50');
+        return;
+      }
+
+      setPeerStatus('Sevgilin aranıyor...');
+      await publishPeerId(myPeerId);
+      const snap = await getDoc(peerSignalingRef);
+      if (!snap.exists()) {
+        setPeerStatus('Sevgilin aranıyor...');
+        return;
+      }
+
       const data = snap.data();
-      for (const [token, info] of Object.entries(data)) {
-        if (token !== mySessionToken && info && info.peerId) {
-          if (!conn && mySessionToken < token) {
-            document.getElementById('peerStatus').textContent = 'Bağlanılıyor...';
-            conn = peer.connect(info.peerId);
-            setupPeerConnection();
+      const partner = Object.entries(data).find(([token, info]) =>
+        token !== mySessionToken && info && info.peerId
+      );
+      if (!partner) {
+        setPeerStatus('Sevgilin aranıyor...');
+        return;
+      }
+
+      const [partnerToken, partnerInfo] = partner;
+      // Yalnızca bir taraf arama başlatsın; iki cihaz aynı anda tıklasa da çift bağlantı oluşmasın.
+      if (mySessionToken > partnerToken) {
+        setPeerStatus('Sevgilin aranıyor...');
+        return;
+      }
+
+      setPeerStatus('Bağlanılıyor...');
+      try {
+        conn = peer.connect(partnerInfo.peerId, { reliable: true });
+        setupPeerConnection();
+      } catch (err) {
+        console.error('Partner bağlantısı başlatılamadı:', err);
+        conn = null;
+        setPeerStatus('Bağlantı kurulamadı — tekrar dene', '#e25555');
+      }
+    }
+
+    document.getElementById('reconnectPeerBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('reconnectPeerBtn');
+      if (peerRetrying) return;
+      peerRetrying = true;
+      btn.disabled = true;
+      btn.textContent = '🔎 Aranıyor...';
+      try {
+        if (!peer || peer.destroyed || peer.disconnected) {
+          if (peer && !peer.destroyed) peer.destroy();
+          peer = null;
+          myPeerId = null;
+          conn = null;
+          initPeer();
+        } else {
+          if (conn && !conn.open) {
+            try { conn.close(); } catch (_) {}
+            conn = null;
           }
+          await findPartnerAndConnect();
         }
+      } catch (err) {
+        console.error('Yeniden eşleşme hatası:', err);
+        setPeerStatus('Tekrar bağlanılamadı — yeniden dene', '#e25555');
+      } finally {
+        window.setTimeout(() => {
+          peerRetrying = false;
+          btn.disabled = false;
+          btn.textContent = '💞 Sevgilimi bul';
+        }, 1200);
+      }
+    });
+
+    onSnapshot(peerSignalingRef, async (snap) => {
+      if (!snap.exists() || !myPeerId || (conn && conn.open)) return;
+      const data = snap.data();
+      const hasPartner = Object.entries(data).some(([token, info]) =>
+        token !== mySessionToken && info && info.peerId
+      );
+      if (hasPartner && mySessionToken < Object.keys(data).filter(t => t !== mySessionToken).sort()[0]) {
+        try { await findPartnerAndConnect(); } catch (err) { console.warn(err); }
       }
     });
 
     function setupPeerConnection() {
-      document.getElementById('peerStatus').textContent = 'Bağlanılıyor...';
+      if (!conn) return;
+      setPeerStatus('Bağlanılıyor...');
 
       conn.on('open', () => {
-        document.getElementById('peerStatus').textContent = 'Bağlandı 💖';
-        document.getElementById('peerStatus').style.color = '#4CAF50';
+        setPeerStatus('Bağlandı 💖', '#4CAF50');
         const dataUrl = paintCanvas.toDataURL('image/png');
         conn.send({ type: 'state', url: dataUrl });
       });
@@ -1508,9 +1612,12 @@
       });
 
       conn.on('close', () => {
-        document.getElementById('peerStatus').textContent = 'Bağlantı koptu';
-        document.getElementById('peerStatus').style.color = '#e25555';
+        setPeerStatus('Bağlantı koptu — yeniden deneyebilirsin', '#e25555');
         conn = null;
+      });
+      conn.on('error', (err) => {
+        console.error('Peer bağlantı hatası:', err);
+        setPeerStatus('Bağlantı hatası — yeniden deneyebilirsin', '#e25555');
       });
     }
 
