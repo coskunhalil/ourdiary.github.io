@@ -208,6 +208,7 @@
   .brush-size { width: 80px; accent-color: var(--accent); }
   .peer-btn { background: var(--accent); color: var(--card); border: none; padding: 7px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.82rem; white-space: nowrap; }
   .peer-btn-secondary { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); }
+  .peer-btn:disabled { opacity: .45; cursor: not-allowed; }
   .sticker-panel { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
   .sticker-heading { font-size: .85rem; font-weight: 700; margin-bottom: 9px; }
   .sticker-tray { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
@@ -384,7 +385,6 @@
       <span>Canlı Çizim Bağlantısı:</span>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
         <span id="peerStatus" style="font-weight: 700; color: var(--text-soft);">Bağlantı kuruluyor...</span>
-        <button type="button" id="reconnectPeerBtn" class="peer-btn">💞 Sevgilimi bul</button>
       </div>
     </div>
 
@@ -397,6 +397,9 @@
         <input type="color" id="drawColor" value="#3a2432" class="color-picker" title="Fırça Rengi">
         <input type="range" id="drawSize" min="1" max="25" value="3" class="brush-size" title="Fırça Kalınlığı">
         <button type="button" id="eraserBtn" class="peer-btn peer-btn-secondary">Silgi</button>
+        <button type="button" id="fillToolBtn" class="peer-btn peer-btn-secondary">🪣 Boya kovası</button>
+        <button type="button" id="undoCanvasBtn" class="peer-btn peer-btn-secondary" title="Son işlemi geri al">↶ Geri al</button>
+        <button type="button" id="redoCanvasBtn" class="peer-btn peer-btn-secondary" title="Geri alınan işlemi yinele">↷ Yinele</button>
         <button type="button" id="clearCanvasBtn" class="peer-btn peer-btn-secondary">Temizle</button>
       </div>
       <div class="canvas-tool-group">
@@ -1231,6 +1234,33 @@
     let isEraser = false;
     let activeSticker = null;
     let stickerBrush = false;
+    let fillMode = false;
+    // Undo/redo stores canvas snapshots locally; actions are mirrored to the partner.
+    const undoStack = [];
+    const redoStack = [];
+    const MAX_HISTORY = 30;
+    function captureCanvas() { return pCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height); }
+    function rememberCanvas() {
+      undoStack.push(captureCanvas());
+      if (undoStack.length > MAX_HISTORY) undoStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+    function updateHistoryButtons() {
+      document.getElementById('undoCanvasBtn').disabled = undoStack.length === 0;
+      document.getElementById('redoCanvasBtn').disabled = redoStack.length === 0;
+    }
+    function restoreCanvas(imageData, sendToPeer) {
+      pCtx.putImageData(imageData, 0, 0);
+      if (sendToPeer && conn && conn.open) conn.send({ type: 'state', url: paintCanvas.toDataURL('image/png') });
+    }
+    function setFillMode(on) {
+      fillMode = on;
+      const btn = document.getElementById('fillToolBtn');
+      btn.classList.toggle('active', on);
+      btn.textContent = on ? '🪣 Boya kovası (Aktif)' : '🪣 Boya kovası';
+      paintCanvas.style.cursor = on ? 'cell' : (activeSticker ? 'copy' : 'crosshair');
+    }
     let lastStickerX = -Infinity;
     let lastStickerY = -Infinity;
 
@@ -1256,6 +1286,7 @@
       // Only switch away from eraser when a real sticker is selected.
       // chooseSticker(null, null) is also used by the eraser button itself.
       if (sticker) {
+        setFillMode(false);
         isEraser = false;
         const eraserButton = document.getElementById('eraserBtn');
         eraserButton.classList.remove('active');
@@ -1328,13 +1359,22 @@
 
     function startPaint(e) {
       const pos = getCanvasPos(e);
+      if (fillMode) {
+        rememberCanvas();
+        floodFill(Math.floor(pos.x), Math.floor(pos.y), document.getElementById('drawColor').value);
+        if (conn && conn.open) conn.send({ type: 'fill', x: Math.floor(pos.x), y: Math.floor(pos.y), color: document.getElementById('drawColor').value });
+        e.preventDefault();
+        return;
+      }
       if (activeSticker) {
+        rememberCanvas();
         const size = Number(document.getElementById('stickerSize').value);
         paintSticker(activeSticker, pos.x, pos.y, size, true);
         lastStickerX = pos.x;
         lastStickerY = pos.y;
         if (!stickerBrush) { isDrawing = false; e.preventDefault(); return; }
       }
+      rememberCanvas();
       isDrawing = true;
       lastX = pos.x;
       lastY = pos.y;
@@ -1393,8 +1433,56 @@
     paintCanvas.addEventListener('touchmove', paint, { passive: false });
     paintCanvas.addEventListener('touchend', stopPaint);
 
+    // Contiguous-area flood fill (bucket tool).
+    function floodFill(startX, startY, cssColor) {
+      if (startX < 0 || startY < 0 || startX >= paintCanvas.width || startY >= paintCanvas.height) return;
+      const image = pCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height);
+      const data = image.data;
+      const start = (startY * paintCanvas.width + startX) * 4;
+      const target = [data[start], data[start + 1], data[start + 2], data[start + 3]];
+      const hex = cssColor.replace('#', '');
+      const replacement = [parseInt(hex.slice(0,2),16), parseInt(hex.slice(2,4),16), parseInt(hex.slice(4,6),16), 255];
+      if (target.every((v,i) => v === replacement[i])) return;
+      const matches = (i) => data[i] === target[0] && data[i+1] === target[1] && data[i+2] === target[2] && data[i+3] === target[3];
+      const stack = [[startX, startY]];
+      while (stack.length) {
+        const [x,y] = stack.pop();
+        if (x < 0 || y < 0 || x >= paintCanvas.width || y >= paintCanvas.height) continue;
+        const i = (y * paintCanvas.width + x) * 4;
+        if (!matches(i)) continue;
+        let left = x;
+        let li = i;
+        while (left >= 0 && matches(li)) { left--; li -= 4; }
+        left++;
+        let spanUp = false, spanDown = false;
+        for (let px = left; px < paintCanvas.width; px++) {
+          const pi = (y * paintCanvas.width + px) * 4;
+          if (!matches(pi)) break;
+          data[pi] = replacement[0]; data[pi+1] = replacement[1]; data[pi+2] = replacement[2]; data[pi+3] = replacement[3];
+          if (y > 0) { const up = pi - paintCanvas.width*4; if (matches(up)) { if (!spanUp) stack.push([px,y-1]); spanUp = true; } else spanUp = false; }
+          if (y < paintCanvas.height-1) { const down = pi + paintCanvas.width*4; if (matches(down)) { if (!spanDown) stack.push([px,y+1]); spanDown = true; } else spanDown = false; }
+        }
+      }
+      pCtx.putImageData(image, 0, 0);
+    }
+    document.getElementById('fillToolBtn').onclick = () => { setFillMode(!fillMode); if (fillMode) { chooseSticker(null, null); isEraser = false; eraserBtn.textContent = 'Silgi'; eraserBtn.style.background = 'var(--bg-soft)'; eraserBtn.style.color = 'var(--text)'; } };
+    document.getElementById('undoCanvasBtn').onclick = () => {
+      if (!undoStack.length) return;
+      redoStack.push(captureCanvas());
+      restoreCanvas(undoStack.pop(), true);
+      updateHistoryButtons();
+    };
+    document.getElementById('redoCanvasBtn').onclick = () => {
+      if (!redoStack.length) return;
+      undoStack.push(captureCanvas());
+      restoreCanvas(redoStack.pop(), true);
+      updateHistoryButtons();
+    };
+    updateHistoryButtons();
+
     const eraserBtn = document.getElementById('eraserBtn');
     eraserBtn.onclick = () => {
+      setFillMode(false);
       isEraser = !isEraser;
       eraserBtn.style.background = isEraser ? 'var(--accent)' : 'var(--bg-soft)';
       eraserBtn.style.color = isEraser ? 'var(--card)' : 'var(--text)';
@@ -1408,6 +1496,7 @@
     };
 
     function clearPaintLocal(sendToPeer) {
+      if (sendToPeer) rememberCanvas();
       pCtx.fillStyle = '#ffffff';
       pCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
       if (sendToPeer && conn && conn.open) {
@@ -1443,7 +1532,6 @@
     let peer = null;
     let conn = null;
     let myPeerId = null;
-    let peerRetrying = false;
 
     function setPeerStatus(message, color = 'var(--text-soft)') {
       const status = document.getElementById('peerStatus');
@@ -1540,46 +1628,20 @@
       }
     }
 
-    document.getElementById('reconnectPeerBtn').addEventListener('click', async () => {
-      const btn = document.getElementById('reconnectPeerBtn');
-      if (peerRetrying) return;
-      peerRetrying = true;
-      btn.disabled = true;
-      btn.textContent = '🔎 Aranıyor...';
-      try {
-        if (!peer || peer.destroyed || peer.disconnected) {
-          if (peer && !peer.destroyed) peer.destroy();
-          peer = null;
-          myPeerId = null;
-          conn = null;
-          initPeer();
-        } else {
-          if (conn && !conn.open) {
-            try { conn.close(); } catch (_) {}
-            conn = null;
-          }
-          await findPartnerAndConnect();
-        }
-      } catch (err) {
-        console.error('Yeniden eşleşme hatası:', err);
-        setPeerStatus('Tekrar bağlanılamadı — yeniden dene', '#e25555');
-      } finally {
-        window.setTimeout(() => {
-          peerRetrying = false;
-          btn.disabled = false;
-          btn.textContent = '💞 Sevgilimi bul';
-        }, 1200);
-      }
-    });
 
+    // Asıl otomatik eşleşme: signaling belgesi değiştiğinde yeniden kontrol et.
+    // Oturum token'ı alfabetik olarak küçük olan taraf bağlantıyı başlatır;
+    // diğer taraf gelen bağlantıyı kabul eder. Böylece iki taraf da butona basmaz.
     onSnapshot(peerSignalingRef, async (snap) => {
-      if (!snap.exists() || !myPeerId || (conn && conn.open)) return;
-      const data = snap.data();
-      const hasPartner = Object.entries(data).some(([token, info]) =>
+      if (!snap.exists() || !myPeerId || !peer || peer.destroyed || (conn && conn.open)) return;
+      const data = snap.data() || {};
+      const partnerExists = Object.entries(data).some(([token, info]) =>
         token !== mySessionToken && info && info.peerId
       );
-      if (hasPartner && mySessionToken < Object.keys(data).filter(t => t !== mySessionToken).sort()[0]) {
-        try { await findPartnerAndConnect(); } catch (err) { console.warn(err); }
+      if (partnerExists && mySessionToken < Object.keys(data).filter(t => t !== mySessionToken).sort()[0]) {
+        try { await findPartnerAndConnect(); } catch (err) { console.warn('Otomatik eşleşme denemesi başarısız:', err); }
+      } else if (!partnerExists) {
+        setPeerStatus('Sevgilin bekleniyor...');
       }
     });
 
@@ -1600,6 +1662,8 @@
           paintSticker(data.sticker, data.x, data.y, data.size, false);
         } else if (data.type === 'clear') {
           clearPaintLocal(false);
+        } else if (data.type === 'fill') {
+          floodFill(data.x, data.y, data.color);
         } else if (data.type === 'state') {
           const img = new Image();
           img.onload = () => {
