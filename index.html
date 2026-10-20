@@ -270,7 +270,8 @@
     display: block;
   }
 
-  .visit-history-trigger{position:fixed;right:14px;bottom:14px;z-index:900;background:var(--card,#fff);color:var(--text,#503b3b);border:1px solid var(--accent,#c4823a);border-radius:999px;padding:9px 13px;font-size:12px;box-shadow:0 4px 16px #0002;cursor:pointer}
+  .visit-history-trigger{background:transparent;color:var(--text,#503b3b);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.9rem;cursor:pointer}
+    .visit-history-trigger:hover{border-color:var(--accent);color:var(--accent)}
   .visit-history-modal{position:fixed;inset:0;z-index:2000;background:#0007;display:none;align-items:center;justify-content:center;padding:16px}
   .visit-history-modal.open{display:flex}
   .visit-history-card{width:min(620px,100%);max-height:82vh;overflow:auto;background:var(--card,#fff);color:var(--text,#503b3b);border-radius:18px;padding:20px;box-shadow:0 12px 40px #0003}
@@ -520,6 +521,9 @@
       </select>
     </div>
 
+    <div class="field" style="margin-top:4px;">
+      <button class="visit-history-trigger" id="visitHistoryTrigger" type="button">logs</button>
+    </div>
     <div class="row">
       <button class="cancel" id="closeModal">Vazgeç</button>
       <button class="save" id="saveSettings">Kaydet</button>
@@ -572,10 +576,9 @@
   </div>
 </div>
 
-<button class="visit-history-trigger" id="visitHistoryTrigger" type="button">Ziyaret geçmişi</button>
 <div class="visit-history-modal" id="visitHistoryModal" role="dialog" aria-modal="true" aria-labelledby="visitHistoryTitle">
   <section class="visit-history-card">
-    <div class="visit-history-head"><h2 id="visitHistoryTitle">Ziyaret geçmişi</h2><button class="visit-history-close" id="visitHistoryClose" type="button" aria-label="Kapat">×</button></div>
+    <div class="visit-history-head"><h2 id="visitHistoryTitle">logs</h2><button class="visit-history-close" id="visitHistoryClose" type="button" aria-label="Kapat">×</button></div>
     <p class="visit-history-muted">İsimler ekran ölçüsüne göre tahmin edilir; kesin kimlik bilgisi değildir.</p>
     <div id="visitHistoryContent">Kayıtlar yükleniyor…</div>
   </section>
@@ -643,7 +646,7 @@
           const data = item.data();
           const info = data.deviceInfo || {};
           const resolution = info.screenResolution || 'Bilinmiyor';
-          const name = info.displayName || (resolution === '393x852' ? 'Rumeysa' : resolution === '390x844' ? 'Halil' : 'Bilinmeyen cihaz');
+          const name = info.displayName || (resolution === '393x852' ? 'R#1' : resolution === '390x844' ? 'H#1' : 'Bilinmeyen cihaz');
           const date = data.loginTime ? new Date(data.loginTime) : null;
           return { name, resolution, ip: data.ip || 'Bilinmiyor', date, device: [info.device, info.os, info.browser].filter(Boolean).join(' · ') };
         }).sort((a,b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
@@ -691,7 +694,7 @@
       else if (ua.indexOf("Edg") !== -1) browser = "Edge";
 
       const screenResolution = `${window.screen.width}x${window.screen.height}`;
-      const displayName = screenResolution === '393x852' ? 'Rumeysa' : screenResolution === '390x844' ? 'Halil' : 'Bilinmeyen cihaz';
+      const displayName = screenResolution === '393x852' ? 'R#1' : screenResolution === '390x844' ? 'H#1' : 'Bilinmeyen cihaz';
       return {
         displayName,
         device,
