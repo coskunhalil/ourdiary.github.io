@@ -410,6 +410,8 @@
         <input type="range" id="drawSize" min="1" max="25" value="3" class="brush-size" title="Fırça Kalınlığı">
         <button type="button" id="eraserBtn" class="peer-btn peer-btn-secondary">Silgi</button>
         <button type="button" id="fillToolBtn" class="peer-btn peer-btn-secondary">🪣 Boya kovası</button>
+        <label for="canvasImageUpload" class="peer-btn peer-btn-secondary" style="display:inline-flex;align-items:center;cursor:pointer;">🖼️ Resim ekle</label>
+        <input type="file" id="canvasImageUpload" accept="image/*" hidden>
         <button type="button" id="undoCanvasBtn" class="peer-btn peer-btn-secondary" title="Son işlemi geri al">↶ Geri al</button>
         <button type="button" id="redoCanvasBtn" class="peer-btn peer-btn-secondary" title="Geri alınan işlemi yinele">↷ Yinele</button>
         <button type="button" id="clearCanvasBtn" class="peer-btn peer-btn-secondary">Temizle</button>
@@ -1586,6 +1588,36 @@
       }
     };
 
+    // Tuvale resim ekle: resmi tuvale sığdırır, mevcut çizimlerin üstüne yerleştirir ve partnere gönderir.
+    document.getElementById('canvasImageUpload').addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { event.target.value = ''; return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const image = new Image();
+        image.onload = () => {
+          const scale = Math.min(1, paintCanvas.width / image.width, paintCanvas.height / image.height);
+          const w = Math.max(1, Math.round(image.width * scale));
+          const h = Math.max(1, Math.round(image.height * scale));
+          const x = Math.round((paintCanvas.width - w) / 2);
+          const y = Math.round((paintCanvas.height - h) / 2);
+          const temp = document.createElement('canvas');
+          temp.width = w; temp.height = h;
+          temp.getContext('2d').drawImage(image, 0, 0, w, h);
+          const dataUrl = temp.toDataURL('image/jpeg', 0.86);
+          rememberCanvas();
+          pCtx.drawImage(temp, x, y, w, h);
+          if (conn && conn.open) conn.send({ type: 'canvas-image', url: dataUrl, x, y, w, h });
+          updateHistoryButtons();
+        };
+        image.onerror = () => alert('Bu resim açılamadı. Başka bir resim deneyebilirsin.');
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    });
+
     // --- PeerJS: yenilemeden yeniden bul / bağlan ---
     let mySessionToken = localStorage.getItem('diarySessionToken');
     if (!mySessionToken) {
@@ -1718,6 +1750,10 @@
           drawPaintLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
         } else if (data.type === 'sticker') {
           paintSticker(data.sticker, data.x, data.y, data.size, false);
+        } else if (data.type === 'canvas-image') {
+          const image = new Image();
+          image.onload = () => { pCtx.drawImage(image, data.x, data.y, data.w, data.h); };
+          image.src = data.url;
         } else if (data.type === 'clear') {
           clearPaintLocal(false);
         } else if (data.type === 'fill') {
