@@ -275,6 +275,14 @@
     object-fit: cover;
     display: block;
   }
+  .music-gallery-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+  .music-gallery-item { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--card); min-width:0; }
+  .music-gallery-icon { width:42px; height:42px; flex:0 0 42px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:var(--accent-soft); color:var(--accent); font-size:20px; }
+  .music-gallery-info { flex:1; min-width:0; }
+  .music-gallery-title { display:block; color:var(--text); font-weight:700; overflow-wrap:anywhere; }
+  .music-gallery-meta { display:block; margin-top:3px; color:var(--text-soft); font-size:.8rem; overflow-wrap:anywhere; }
+  .music-gallery-player { display:block; width:100%; max-width:520px; margin-top:8px; accent-color:var(--accent); }
+  @media (max-width:520px) { .music-gallery-item { align-items:flex-start; } .music-gallery-icon { width:36px; height:36px; flex-basis:36px; } }
 
   .visit-history-trigger{background:transparent;color:var(--text,#503b3b);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.9rem;cursor:pointer}
     .visit-history-trigger:hover{border-color:var(--accent);color:var(--accent)}
@@ -395,6 +403,13 @@
     <h2>Fotoğraf Galerisi 📸</h2>
     <div class="gallery-grid" id="galleryGrid"></div>
     <p class="empty" id="galleryEmptyMsg" style="display:none; text-align:center; padding:10px 0;">Henüz hiç fotoğraf eklenmemiş.</p>
+  </div>
+
+  <div class="gallery-section" id="musicGallerySection">
+    <hr class="divider">
+    <h2>Müzik Galerisi 🎵</h2>
+    <div class="music-gallery-list" id="musicGalleryList"></div>
+    <p class="empty" id="musicGalleryEmptyMsg" style="display:none; text-align:center; padding:10px 0;">Henüz müzik eklenmemiş. Günlük yazarken şarkı eklediğinde burada görünecek.</p>
   </div>
 
   <div class="bucket-section">
@@ -1163,6 +1178,7 @@
 
       renderDiaryPagination(totalPages, days.length);
       renderPhotoGallery();
+      renderMusicGallery();
     }
 
     function renderPhotoGallery() {
@@ -1207,6 +1223,66 @@
           galleryGrid.appendChild(div);
         });
       }
+    }
+
+    function renderMusicGallery() {
+      const musicList = document.getElementById('musicGalleryList');
+      const emptyMessage = document.getElementById('musicGalleryEmptyMsg');
+      if (!musicList || !emptyMessage) return;
+      musicList.innerHTML = '';
+
+      const tracks = diary
+        .filter(item => typeof item.audioUrl === 'string' && item.audioUrl.trim())
+        .map(item => ({
+          id: item.id,
+          url: item.audioUrl,
+          name: item.audioName || 'İsimsiz müzik',
+          author: item.author || 'Paylaşan belirtilmemiş',
+          date: item.date || '',
+          time: item.time || '',
+          createdAt: item.createdAt && typeof item.createdAt.seconds === 'number' ? item.createdAt.seconds : 0
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt || (b.date + b.time).localeCompare(a.date + a.time));
+
+      emptyMessage.style.display = tracks.length ? 'none' : 'block';
+      tracks.forEach(track => {
+        const item = document.createElement('div');
+        item.className = 'music-gallery-item';
+
+        const icon = document.createElement('div');
+        icon.className = 'music-gallery-icon';
+        icon.textContent = '♫';
+        icon.setAttribute('aria-hidden', 'true');
+
+        const info = document.createElement('div');
+        info.className = 'music-gallery-info';
+
+        const title = document.createElement('span');
+        title.className = 'music-gallery-title';
+        title.textContent = track.name;
+
+        const meta = document.createElement('span');
+        meta.className = 'music-gallery-meta';
+        const dateLabel = track.date ? formatDiaryDate(track.date) : 'Tarih belirtilmemiş';
+        const timeLabel = track.time ? ' • ' + track.time : '';
+        meta.textContent = `Paylaşan: ${track.author} • ${dateLabel}${timeLabel}`;
+
+        const player = document.createElement('audio');
+        player.className = 'music-gallery-player';
+        player.controls = true;
+        player.preload = 'none';
+        player.src = track.url;
+        player.setAttribute('aria-label', `${track.name} — ${track.author}`);
+        player.addEventListener('play', () => {
+          musicList.querySelectorAll('audio').forEach(otherPlayer => {
+            if (otherPlayer !== player) otherPlayer.pause();
+          });
+        });
+
+        info.append(title, meta, player);
+        item.append(icon, info);
+        musicList.appendChild(item);
+      });
     }
 
     function openEditForm(item) {
@@ -1304,13 +1380,14 @@
     };
 
     onSnapshot(settingsRef, (snap) => {
-      if (snap.exists()) { settings = { ...settings, ...snap.data() }; renderProfile(); tick(); renderPhotoGallery(); }
+      if (snap.exists()) { settings = { ...settings, ...snap.data() }; renderProfile(); tick(); renderPhotoGallery(); renderMusicGallery(); }
     });
 
     onSnapshot(entriesCol, (snap) => {
       diary = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderDiary();
       renderPhotoGallery();
+      renderMusicGallery();
     });
 
     onSnapshot(bucketCol, (snap) => {
@@ -2101,6 +2178,7 @@
     renderDiary();
     renderBucketList();
     renderPhotoGallery();
+    renderMusicGallery();
     tick();
     setInterval(tick, 1000);
   }
