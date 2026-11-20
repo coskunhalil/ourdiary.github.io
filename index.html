@@ -177,6 +177,12 @@
   .entry p { margin: 0; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
   .entry-photo-thumb { margin-top: 10px; max-width: 100%; max-height: 240px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s; }
   .entry-photo-thumb:hover { transform: scale(1.02); }
+  .entry-audio-player { display:block; width:min(100%, 420px); margin-top:12px; accent-color:var(--accent); }
+  .entry-audio-name { display:block; margin-top:8px; color:var(--text-soft); font-size:.82rem; overflow-wrap:anywhere; }
+  .audio-input-group { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .audio-input-group input[type="text"] { flex:1; min-width:180px; padding:9px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); font:inherit; }
+  .audio-help { color:var(--text-soft); font-size:.78rem; margin:6px 0 0; }
+  #entryAudioStatus { color:var(--text-soft); font-size:.82rem; margin-top:7px; overflow-wrap:anywhere; }
   .entry-actions { display: flex; gap: 12px; margin-top: 6px; }
   .entry .del, .entry .edit-btn { background: none; border: none; color: var(--text-soft); font-size: 0.78rem; cursor: pointer; padding: 4px 0; transition: color 0.2s; }
   .entry .edit-btn:hover { color: var(--accent); }
@@ -357,6 +363,18 @@
         <img id="entryPhotoPreview" src="" style="max-height:120px; border-radius:8px; border:1px solid var(--border); object-fit:cover;">
         <button type="button" id="removeEntryPhoto" style="background:#e25555; color:white; border:none; border-radius:50%; width:22px; height:22px; cursor:pointer; font-size:12px; margin-left:6px; vertical-align:top;">✕</button>
       </div>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label style="font-size:0.82rem; color:var(--text-soft); font-weight:500;">Anı Müziği (İsteğe Bağlı):</label>
+      <div class="audio-input-group">
+        <input id="entryAudioUrl" type="text" placeholder="Doğrudan MP3 / M4A ses bağlantısı">
+        <button type="button" class="btn-upload" id="chooseEntryAudio">Ses Dosyası Seç</button>
+        <input type="file" id="entryAudioFile" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.oga,.opus" style="display:none">
+        <button type="button" class="btn-upload" id="removeEntryAudio" style="background:#e25555;">Müziği Kaldır</button>
+      </div>
+      <p class="audio-help">MP3, M4A, AAC, WAV veya OGG yükleyebilirsin. En fazla 15 MB. Ses dosyaları Cloudinary hesabında saklanır; Firebase depolama alanını kullanmaz.</p>
+      <div id="entryAudioStatus" aria-live="polite"></div>
     </div>
 
     <div class="row">
@@ -604,9 +622,28 @@
       getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc,
       collection, addDoc, deleteDoc, serverTimestamp, getDocs
     } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // Ses dosyaları Firebase Storage yerine Cloudinary'ye yüklenir.
+    const CLOUDINARY_CLOUD_NAME = 'nyv45rth';
+    const CLOUDINARY_UPLOAD_PRESET = 'diary_music';
+    async function uploadDiaryAudio(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('folder', 'diary-music');
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.secure_url) {
+        const message = result.error && result.error.message ? result.error.message : `Cloudinary yüklemesi başarısız (${response.status})`;
+        throw new Error(message);
+      }
+      return { url: result.secure_url, name: result.original_filename || file.name };
+    }
     const settingsRef = doc(db, "site", "settings");
 
     // Görünüm tercihleri bu tarayıcıda saklanır; ortak profil verilerini değiştirmez.
@@ -1001,6 +1038,19 @@
         li.appendChild(img);
       }
 
+      if (item.audioUrl) {
+        const audioName = document.createElement('span');
+        audioName.className = 'entry-audio-name';
+        audioName.textContent = '♫ ' + (item.audioName || 'Anı müziği');
+        const audio = document.createElement('audio');
+        audio.className = 'entry-audio-player';
+        audio.controls = true;
+        audio.preload = 'metadata';
+        audio.src = item.audioUrl;
+        audio.setAttribute('aria-label', item.audioName || 'Anı müziği');
+        li.append(audioName, audio);
+      }
+
       const actionsDiv = document.createElement('div');
       actionsDiv.className = 'entry-actions';
       const createdMs = item.createdAt ? item.createdAt.seconds * 1000 : nowMs;
@@ -1182,6 +1232,10 @@
         document.getElementById('entryPhoto').value = '';
         document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
       }
+      document.getElementById('entryAudioUrl').value = item.audioUrl || '';
+      document.getElementById('entryAudioUrl').dataset.removeExisting = 'false';
+      document.getElementById('entryAudioFile').value = '';
+      document.getElementById('entryAudioStatus').textContent = item.audioUrl ? ('♫ ' + (item.audioName || 'Kayıtlı müzik')) : '';
 
       entryForm.classList.add('open');
       document.getElementById('entryText').focus();
@@ -1834,6 +1888,40 @@
       document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
     };
 
+    document.getElementById('chooseEntryAudio').onclick = () => document.getElementById('entryAudioFile').click();
+    document.getElementById('entryAudioFile').addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      const status = document.getElementById('entryAudioStatus');
+      if (!file) return;
+      if (!file.type.startsWith('audio/') && !/\.(mp3|m4a|aac|wav|ogg|oga|opus)$/i.test(file.name)) {
+        alert('Lütfen geçerli bir ses dosyası seç.');
+        event.target.value = '';
+        return;
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Ses dosyası en fazla 15 MB olabilir.');
+        event.target.value = '';
+        return;
+      }
+      document.getElementById('entryAudioUrl').value = '';
+      document.getElementById('entryAudioUrl').dataset.removeExisting = 'false';
+      status.textContent = '♫ Seçildi: ' + file.name + ' (Kaydet dediğinde yüklenecek)';
+    });
+    document.getElementById('entryAudioUrl').addEventListener('input', () => {
+      const fileInput = document.getElementById('entryAudioFile');
+      if (document.getElementById('entryAudioUrl').value.trim()) {
+        fileInput.value = '';
+        document.getElementById('entryAudioUrl').dataset.removeExisting = 'false';
+      }
+      document.getElementById('entryAudioStatus').textContent = document.getElementById('entryAudioUrl').value.trim() ? '♫ Ses bağlantısı eklendi' : '';
+    });
+    document.getElementById('removeEntryAudio').onclick = () => {
+      document.getElementById('entryAudioUrl').value = '';
+      document.getElementById('entryAudioUrl').dataset.removeExisting = 'true';
+      document.getElementById('entryAudioFile').value = '';
+      document.getElementById('entryAudioStatus').textContent = '';
+    };
+
     document.getElementById('avatarsWrapper').onclick = () => document.getElementById('settingsBtn').click();
     document.getElementById('settingsBtn').onclick = () => {
       document.getElementById('name1').value = settings.name1 || '';
@@ -1930,6 +2018,10 @@
       document.getElementById('entryPhoto').value = '';
       document.getElementById('entryFile').value = '';
       document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+      document.getElementById('entryAudioUrl').value = '';
+      document.getElementById('entryAudioUrl').dataset.removeExisting = 'false';
+      document.getElementById('entryAudioFile').value = '';
+      document.getElementById('entryAudioStatus').textContent = '';
       entryForm.classList.add('open');
       document.getElementById('entryText').focus();
     };
@@ -1940,40 +2032,61 @@
     };
     
     document.getElementById('saveEntry').onclick = async () => {
+      const saveButton = document.getElementById('saveEntry');
       const text = document.getElementById('entryText').value.trim();
       const date = document.getElementById('entryDate').value || getLocalDateString();
       const time = document.getElementById('entryTime').value || (pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()));
       const author = document.getElementById('entryAuthor').value || settings.name1;
       const photo = document.getElementById('entryPhoto').value.trim() || null;
+      const selectedAudio = document.getElementById('entryAudioFile').files[0] || null;
+      const audioUrlInput = document.getElementById('entryAudioUrl').value.trim();
+      const existingEntry = editingEntryId ? diary.find(item => item.id === editingEntryId) : null;
 
-      if (!text && !photo) return;
-      
-      diaryPage = 0;
-      if (editingEntryId) {
-        await updateDoc(doc(db, 'entries', editingEntryId), {
-          date,
-          time,
-          text,
-          author,
-          photo
-        });
-        editingEntryId = null;
-      } else {
-        await addDoc(entriesCol, { 
-          date, 
-          time,
-          text, 
-          author, 
-          photo, 
-          createdAt: serverTimestamp() 
-        });
+      if (!text && !photo && !selectedAudio && !audioUrlInput && !(existingEntry && existingEntry.audioUrl)) return;
+      if (selectedAudio && selectedAudio.size > 15 * 1024 * 1024) {
+        alert('Ses dosyası en fazla 15 MB olabilir.');
+        return;
       }
 
-      document.getElementById('entryText').value = '';
-      document.getElementById('entryPhoto').value = '';
-      document.getElementById('entryFile').value = '';
-      document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
-      entryForm.classList.remove('open');
+      saveButton.disabled = true;
+      const originalButtonText = saveButton.textContent;
+      saveButton.textContent = selectedAudio ? 'Müzik yükleniyor…' : 'Kaydediliyor…';
+      try {
+        const removeExistingAudio = document.getElementById('entryAudioUrl').dataset.removeExisting === 'true';
+        let audioUrl = audioUrlInput || (existingEntry && !removeExistingAudio ? existingEntry.audioUrl || null : null);
+        let audioName = audioUrlInput ? (audioUrlInput.split('/').pop().split('?')[0] || 'Bağlantıdaki müzik') : (existingEntry && !removeExistingAudio ? existingEntry.audioName || null : null);
+
+        if (selectedAudio) {
+          const uploadedAudio = await uploadDiaryAudio(selectedAudio);
+          audioUrl = uploadedAudio.url;
+          audioName = uploadedAudio.name || selectedAudio.name;
+        }
+
+        diaryPage = 0;
+        const entryData = { date, time, text, author, photo, audioUrl, audioName };
+        if (editingEntryId) {
+          await updateDoc(doc(db, 'entries', editingEntryId), entryData);
+          editingEntryId = null;
+        } else {
+          await addDoc(entriesCol, { ...entryData, createdAt: serverTimestamp() });
+        }
+
+        document.getElementById('entryText').value = '';
+        document.getElementById('entryPhoto').value = '';
+        document.getElementById('entryFile').value = '';
+        document.getElementById('entryPhotoPreviewContainer').style.display = 'none';
+        document.getElementById('entryAudioUrl').value = '';
+        document.getElementById('entryAudioUrl').dataset.removeExisting = 'false';
+        document.getElementById('entryAudioFile').value = '';
+        document.getElementById('entryAudioStatus').textContent = '';
+        entryForm.classList.remove('open');
+      } catch (error) {
+        console.error('Anı kaydedilemedi:', error);
+        alert('Anı kaydedilemedi. İnternet bağlantısını, Cloudinary Upload Preset ayarını ve Firestore izinlerini kontrol et. Ayrıntı: ' + (error.message || error));
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = originalButtonText;
+      }
     };
 
     document.getElementById('addBucketBtn').onclick = async () => {
